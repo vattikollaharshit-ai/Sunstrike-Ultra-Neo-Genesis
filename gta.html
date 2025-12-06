@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>GTA — Grand Test Assessment (Rebuilt)</title>
+<title>GTA — Practice UI + GTA features</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <div class="brand">GTA — Grand Test Assessment</div>
+    <div class="brand">Practice → GTA (Sunstrike)</div>
     <div class="nav">
       <a href="index.html">Dashboard</a>
       <a href="practice.html">Practice</a>
@@ -22,525 +22,493 @@
 
   <main>
     <div class="card">
-      <div class="h1">Start GTA Session</div>
-      <div class="small">Forced exam flow — main time is static and only reduced on successful submit.</div>
+      <div class="h1">GTA Session (Practice UI)</div>
+      <div class="small">Static main timer — time is consumed only when a question is successfully submitted. Use Pause if you step away. You must mark result after submitting.</div>
 
-      <div style="margin-top:10px">
-        <label class="small">Session Name</label>
-        <input id="gta-name" class="input" placeholder="GTA_2025-12-06_001" />
-
-        <div style="margin-top:8px" class="row">
-          <label class="small">Total Time (minutes)</label>
-          <select id="gta-total" class="input" style="width:140px">
+      <div style="margin-top:12px" class="row">
+        <div style="flex:1">
+          <label class="small">Session Name</label>
+          <input id="gta-session" class="input" placeholder="GTA_2025-12-06_001">
+        </div>
+        <div style="width:160px">
+          <label class="small">Total Time (min)</label>
+          <select id="gta-total" class="input">
             <option>180</option><option>120</option><option>90</option><option>60</option>
           </select>
-
+        </div>
+        <div style="width:160px">
           <label class="small">Subject</label>
-          <select id="gta-sub" class="input" style="width:140px">
-            <option>Mixed</option><option>Maths</option><option>Physics</option><option>Chemistry</option>
-          </select>
-
+          <select id="gta-sub" class="input"><option>Mixed</option><option>Maths</option><option>Physics</option><option>Chemistry</option></select>
+        </div>
+        <div style="width:160px">
           <label class="small">Difficulty</label>
-          <select id="gta-diff" class="input" style="width:140px">
-            <option>Mixed</option><option>Easy</option><option>Medium</option><option>Hard</option><option>Insane</option>
-          </select>
+          <select id="gta-diff" class="input"><option>Mixed</option><option>Easy</option><option>Medium</option><option>Hard</option><option>Insane</option></select>
         </div>
+      </div>
 
-        <div style="margin-top:12px" class="row">
-          <button id="gta-start" class="btn">Start GTA</button>
-          <button id="gta-stop" class="btn ghost">End Session</button>
-          <button id="gta-export" class="btn">Export Session</button>
+      <div style="margin-top:12px" class="row">
+        <button id="gta-start" class="btn">Start GTA</button>
+        <button id="gta-end" class="btn ghost">End Session</button>
+        <button id="gta-export" class="btn">Export</button>
+        <button id="gta-clear-session" class="btn ghost">Clear Session Logs</button>
+      </div>
+
+      <div style="margin-top:14px" class="row">
+        <div style="flex:1" class="card">
+          <div class="small">Main time left</div>
+          <div class="h1" id="main-time">03:00:00</div>
         </div>
-
-        <div style="margin-top:12px" class="row">
-          <div style="flex:1">
-            <div class="small">Main time left</div>
-            <div class="h1" id="main-t">03:00:00</div>
+        <div style="width:180px" class="card">
+          <div class="small">Question #</div>
+          <div class="h1" id="q-number">—</div>
+        </div>
+        <div style="width:220px" class="card">
+          <div class="small">Question timer</div>
+          <div class="h1" id="q-timer">00:00.0</div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button id="q-start" class="btn">Start</button>
+            <button id="q-pause" class="btn ghost" disabled>Pause</button>
+            <button id="q-resume" class="btn ghost" disabled>Resume</button>
+            <button id="q-submit" class="btn" disabled>Submit</button>
           </div>
-
-          <div style="flex:1">
-            <div class="small">Current Question #</div>
-            <div class="h1" id="q-num">—</div>
-          </div>
         </div>
-
-        <div style="margin-top:12px" class="h1">Question Timer</div>
-        <div class="small">Use Pause when you need to step away. You cannot submit while paused.</div>
-        <div style="margin-top:8px" class="row">
-          <button id="q-start" class="btn">Start Question</button>
-          <button id="q-pause" class="btn ghost" disabled>Pause</button>
-          <button id="q-resume" class="btn ghost" disabled>Resume</button>
-          <button id="q-submit" class="btn" disabled>Submit Question</button>
-        </div>
-        <div style="margin-top:12px" class="h1" id="q-t">00:00.0</div>
       </div>
     </div>
 
     <div class="card">
-      <div class="h1">Session Logs (current GTA)</div>
-      <div class="small">Select logs to merge (choose exactly 2). Use edit to change result or delete.</div>
-      <div style="margin-top:10px; display:flex; gap:8px; align-items:center">
-        <button id="merge-btn" class="btn ghost" disabled>Merge Selected (2)</button>
-        <button id="undo-merge" class="btn ghost" disabled>Undo Last Merge</button>
-        <button id="clear-session" class="btn ghost">Clear Session Logs</button>
+      <div class="h1">Session Logs (this GTA)</div>
+      <div class="small">Select exactly two logs to enable Merge. After Submit, mark Correct / Incorrect / Unattempted using the three buttons.</div>
+      <div style="margin-top:10px; display:flex; gap:8px;">
+        <button id="merge" class="btn ghost" disabled>Merge Selected (2)</button>
+        <button id="undo-merge" class="btn ghost" disabled>Undo Merge</button>
       </div>
-      <div id="gta-list" class="list small" style="margin-top:12px; max-height:320px; overflow:auto"></div>
+      <div id="gta-log-list" class="list small" style="margin-top:12px; max-height:420px; overflow:auto"></div>
     </div>
   </main>
 </div>
 
-<footer>Sunstrike Ultra — GTA Reforge</footer>
+<footer>Sunstrike — GTA (Practice UI)</footer>
 
-<!-- SheetJS for export -->
+<!-- SheetJS for Excel export -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="utils.js"></script>
 <script>
-/* GTA (from-scratch) — implements:
-   - static main timer (only changed on successful submit)
-   - auto question numbers
-   - per-question start/pause/resume/submit
-   - submit -> then select result (Correct/Incorrect/Unattempted)
-   - reject submission if question time > remaining main time (no end)
-   - merge exactly two logs with recalculated XP (final combined time)
-   - export to Excel
-   - edit/delete logs
+/* GTA implemented on top of Practice UI
+   - static main timer (only reduced on successful submit)
+   - per-question start / pause / resume / submit
+   - submit -> saved pending log -> immediate 3-button result selection
+   - reject if question time > remaining main time (session continues)
+   - merge exactly two selected logs (merge time, result = 2nd selected), recalc XP
+   - undo last merge
+   - export session to XLSX
+   - uses utils.js save/load/addXP functions
 */
 
 (() => {
-  // state
-  let mainSeconds = 180 * 60; // will be set on start
+  // --- state
   let gtaRunning = false;
-  let currentQNum = 0;
+  let mainSeconds = 180*60; // dynamic when started
+  let qNumber = 0;
 
-  // per-question timer state
-  let qTimer = null;
-  let qStart = 0;
-  let qElapsed = 0; // milliseconds
+  // question timer state
   let qState = 'idle'; // idle | running | paused
+  let qStart = 0, qElapsed = 0, qInterval = null;
 
-  // merge undo stack
+  // last merge undo
   let lastMerge = null;
 
-  // DOM
+  // shortcuts
   const el = id => document.getElementById(id);
-  const fmtMS = ms => {
+  const PRACT = SU.KEYS.PRACTICE;
+
+  // formatters
+  function fmtMS(ms){
     const s = Math.floor(ms/1000);
     const mm = String(Math.floor(s/60)).padStart(2,'0');
     const ss = String(s%60).padStart(2,'0');
     const t = Math.floor(ms%1000/100);
     return `${mm}:${ss}.${t}`;
-  };
-  const fmtMain = sec => {
+  }
+  function fmtMain(sec){
     if(sec < 0) sec = 0;
     const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.floor(sec%60);
     return [String(h).padStart(2,'0'), String(m).padStart(2,'0'), String(s).padStart(2,'0')].join(':');
-  };
+  }
 
-  // utility for points (same-ish formula used elsewhere)
-  function calcGtaPoints(timeSec, diff){
-    // diff: Mixed/Easy/Medium/Hard/Insane
+  // points calc (same idea as practice)
+  function calcPoints(timeSec, diff){
     const base = diff==='Easy'?8:diff==='Medium'?15:diff==='Hard'?40:diff==='Insane'?80:10;
-    // penalty per 4s
     const pts = Math.max(0, Math.round(base - Math.floor(timeSec/4)));
     return Math.max(1, pts);
   }
 
-  // load/save helpers (using utils.js keys)
-  const PRACT = SU.KEYS.PRACTICE;
-  const TESTS = SU.KEYS.TESTS;
-
-  function renderMain() {
-    el('main-t').textContent = fmtMain(mainSeconds);
-    el('q-num').textContent = (currentQNum>0?currentQNum:'—');
-    // button states
+  // UI updates
+  function renderHeader(){
+    el('main-time').textContent = fmtMain(mainSeconds);
+    el('q-number').textContent = qNumber>0? qNumber : '—';
+    el('q-start').disabled = !gtaRunning || qState==='running';
     el('q-pause').disabled = qState !== 'running';
     el('q-resume').disabled = qState !== 'paused';
-    el('q-submit').disabled = (qState !== 'running' && qState !== 'idle');
-    el('q-start').disabled = !gtaRunning || qState === 'running';
+    // submit allowed only when running and not paused
+    el('q-submit').disabled = !(qState === 'running');
   }
 
-  // render gta logs for this session only
-  function renderLogs() {
-    const name = el('gta-name').value || localStorage.getItem('su_default_gta') || '';
-    const sessionKey = name ? ('GTA:'+name) : null;
-    const root = el('gta-list');
+  // LOGS UI
+  function renderLogs(){
+    const sessionName = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
+    const root = el('gta-log-list');
     root.innerHTML = '';
-    if(!sessionKey) { root.innerHTML = '<div class="small">No session name set.</div>'; return; }
-    const all = load(PRACT, []).filter(x => x.session === sessionKey);
-    if(all.length === 0){ root.innerHTML = '<div class="small">No logs yet for this session.</div>'; updateMergeControls(); return; }
-
-    // sort by t ascending (question order)
-    all.sort((a,b) => (a.t||0)-(b.t||0));
+    if(!sessionName) { root.innerHTML = '<div class="small">Set a session name and start.</div>'; disableMerge(); return; }
+    const sessionKey = 'GTA:' + sessionName;
+    const all = load(PRACT, []).filter(x => x.session === sessionKey).sort((a,b)=> (a.t||0)-(b.t||0));
+    if(all.length === 0){ root.innerHTML = '<div class="small">No logs in this session yet.</div>'; disableMerge(); return; }
 
     all.forEach((log, idx) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'topic';
-      // checkbox for merge selection
-      const ch = document.createElement('input');
-      ch.type = 'checkbox';
-      ch.style.marginRight = '8px';
-      ch.dataset.t = log.t;
-      ch.className = 'merge-checkbox';
+      const wrap = document.createElement('div'); wrap.className = 'topic';
+      // left: checkbox + info
+      const left = document.createElement('div'); left.style.display='flex'; left.style.alignItems='center';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'merge-cb'; cb.dataset.t = log.t;
+      cb.style.marginRight = '8px';
+      left.appendChild(cb);
+      const info = document.createElement('div');
+      info.innerHTML = `<strong>Q${log.q || (idx+1)} • ${log.subject}${log.topic? ' • '+log.topic : ''}</strong><div class="small">${log.diff} • ${log.time}s • ${new Date(log.t).toLocaleString()}</div>`;
+      left.appendChild(info);
 
-      // info
-      const left = document.createElement('div');
-      left.innerHTML = `<strong>Q${log.q || (idx+1)} • ${log.subject} ${log.topic? '• '+log.topic: ''}</strong>
-        <div class="small">${log.diff} • ${log.time}s • ${new Date(log.t).toLocaleString()}</div>`;
+      // right: result buttons + delete
+      const right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.alignItems='flex-end';
+      const btnRow = document.createElement('div'); btnRow.style.display='flex'; btnRow.style.gap='8px';
+      // result buttons (match practice style)
+      const btnCorrect = document.createElement('button'); btnCorrect.className='btn'; btnCorrect.textContent='🟩';
+      const btnIncorrect = document.createElement('button'); btnIncorrect.className='btn'; btnIncorrect.textContent='❌';
+      const btnUn = document.createElement('button'); btnUn.className='btn ghost'; btnUn.textContent='◯';
+      // visually mark current selection
+      function styleResultButtons(){
+        btnCorrect.style.opacity = log.result==='Correct'? '1' : '0.6';
+        btnIncorrect.style.opacity = log.result==='Incorrect'? '1' : '0.6';
+        btnUn.style.opacity = (log.result==='Unattempted' || log.result==='Not Attempted')? '1' : '0.6';
+      }
+      styleResultButtons();
 
-      const right = document.createElement('div');
-      right.style.display = 'flex';
-      right.style.flexDirection = 'column';
-      right.style.alignItems = 'flex-end';
-      right.style.gap = '6px';
+      btnCorrect.onclick = () => { updateLogResult(log.t, 'Correct'); };
+      btnIncorrect.onclick = () => { updateLogResult(log.t, 'Incorrect'); };
+      btnUn.onclick = () => { updateLogResult(log.t, 'Unattempted'); };
 
-      const res = document.createElement('div');
-      res.className = 'small';
-      res.textContent = log.result || 'pending';
+      btnRow.appendChild(btnCorrect); btnRow.appendChild(btnIncorrect); btnRow.appendChild(btnUn);
 
-      // buttons: edit result, delete
-      const btns = document.createElement('div');
-      btns.style.display = 'flex';
-      btns.style.gap = '6px';
+      const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Delete';
+      del.onclick = () => { if(!confirm('Delete this log?')) return; deleteLog(log.t); };
 
-      const edit = document.createElement('button');
-      edit.className = 'btn ghost';
-      edit.textContent = 'Edit';
-      edit.onclick = () => {
-        const choice = prompt('Set result: correct / incorrect / unattempted', (log.result||'pending'));
-        if(!choice) return;
-        const c = choice.toLowerCase();
-        if(!['correct','incorrect','unattempted','not attempted','na','pending'].includes(c)){
-          alert('Invalid — use correct / incorrect / unattempted');
-          return;
-        }
-        log.result = (c==='not attempted' || c==='na') ? 'Unattempted' : (c==='pending'?'pending': (c[0].toUpperCase()+c.slice(1)));
-        // if marking correct after it was unattempted and you want to give additional XP, you can merge instead.
-        const arr = load(PRACT, []);
-        const i = arr.findIndex(x => x.t === log.t);
-        if(i !== -1){ arr[i] = log; save(PRACT, arr); renderLogs(); }
-      };
+      right.appendChild(btnRow);
+      right.appendChild(del);
 
-      const del = document.createElement('button');
-      del.className = 'btn ghost';
-      del.textContent = 'Delete';
-      del.onclick = () => {
-        if(!confirm('Delete this log?')) return;
-        let arr = load(PRACT, []);
-        arr = arr.filter(x => x.t !== log.t);
-        save(PRACT, arr);
-        renderLogs();
-      };
-
-      btns.appendChild(edit);
-      btns.appendChild(del);
-
-      right.appendChild(res);
-      right.appendChild(btns);
-
-      // assemble
-      const container = document.createElement('div');
-      container.style.display = 'flex';
-      container.style.justifyContent = 'space-between';
-      container.style.alignItems = 'center';
-      container.style.width = '100%';
-      const leftWrap = document.createElement('div');
-      leftWrap.style.display = 'flex';
-      leftWrap.style.alignItems = 'center';
-      leftWrap.appendChild(ch);
-      leftWrap.appendChild(left);
-
-      container.appendChild(leftWrap);
-      container.appendChild(right);
-
+      const container = document.createElement('div'); container.style.display='flex'; container.style.justifyContent='space-between'; container.style.alignItems='center';
+      container.appendChild(left); container.appendChild(right);
       wrap.appendChild(container);
       root.appendChild(wrap);
+
+      // keep visual in sync if user changes result externally
+      // add listener to update style on render
     });
 
-    // attach checkbox listeners
-    root.querySelectorAll('.merge-checkbox').forEach(cb => {
-      cb.addEventListener('change', updateMergeControls);
-    });
-
-    updateMergeControls();
+    // add listeners for merge checkboxes
+    document.querySelectorAll('.merge-cb').forEach(cb => cb.addEventListener('change', onMergeSelectionChange));
+    updateMergeButtons();
   }
 
-  function updateMergeControls() {
-    const checks = Array.from(document.querySelectorAll('.merge-checkbox') || []).filter(c=>c.checked);
-    el('merge-btn').disabled = (checks.length !== 2);
+  function updateMergeButtons(){
+    const checks = Array.from(document.querySelectorAll('.merge-cb') || []).filter(c=> c.checked);
+    el('merge').disabled = checks.length !== 2;
     el('undo-merge').disabled = !lastMerge;
   }
+  function disableMerge(){ el('merge').disabled = true; el('undo-merge').disabled = !lastMerge; }
 
-  // functions to manage per-question timer
-  function startQuestion() {
-    if(!gtaRunning) { alert('Start GTA session first'); return; }
-    if(qState === 'running') return;
-    // increment question number
-    currentQNum += 1;
-    qState = 'running';
-    qStart = Date.now() - qElapsed;
-    qTimer = setInterval(() => {
-      qElapsed = Date.now() - qStart;
-      el('q-t').textContent = fmtMS(qElapsed);
-    }, 100);
-    renderMain();
-  }
-  function pauseQuestion() {
-    if(qState !== 'running') return;
-    clearInterval(qTimer); qTimer = null;
-    qState = 'paused';
-    renderMain();
-  }
-  function resumeQuestion() {
-    if(qState !== 'paused') return;
-    qState = 'running';
-    qStart = Date.now() - qElapsed;
-    qTimer = setInterval(() => {
-      qElapsed = Date.now() - qStart;
-      el('q-t').textContent = fmtMS(qElapsed);
-    }, 100);
-    renderMain();
-  }
-  function resetQuestionTimer() {
-    if(qTimer) clearInterval(qTimer);
-    qTimer = null;
-    qElapsed = 0;
-    qState = 'idle';
-    el('q-t').textContent = '00:00.0';
-    renderMain();
-  }
+  function onMergeSelectionChange(){ updateMergeButtons(); }
 
-  // Submit question: validate against mainSeconds (static) and then save pending log and prompt result selection
-  function submitQuestion() {
-    if(!gtaRunning){ alert('Start GTA'); return; }
-    if(qState === 'paused'){ alert('Resume before submitting'); return; }
-    if(qState !== 'running' && qState !== 'idle'){ /* allow if idle? */ }
-    // stop timer
-    if(qTimer){ clearInterval(qTimer); qTimer = null; }
-    const timeSec = Math.round((qElapsed || 0) / 1000);
-    // check remaining main time
-    if(timeSec > mainSeconds){
-      alert('Time exceeded remaining main time — submission cancelled. Session continues.');
-      // do not change mainSeconds, do not save log
-      // reset question (user can retry)
-      qElapsed = 0;
-      el('q-t').textContent = '00:00.0';
-      qState = 'idle';
-      renderMain();
-      return;
-    }
-
-    // create a pending log (t timestamp used to dedupe)
-    const name = el('gta-name').value || localStorage.getItem('su_default_gta') || ('GTA_'+new Date().toISOString().slice(0,10));
-    localStorage.setItem('su_default_gta', name);
-    const sessionName = 'GTA:'+name;
-    const subj = el('gta-sub').value || 'Mixed';
-    const diff = el('gta-diff').value || 'Mixed';
-    const qnum = currentQNum;
-
-    const points = calcGtaPoints(timeSec, diff);
-    const entry = { session: sessionName, subject: subj, topic: '', diff, time: timeSec, points, result: 'pending', q: qnum, t: Date.now() };
-
-    // save pending entry
-    const ok = savePracticeEntry(entry);
-    if(!ok){
-      alert('Duplicate prevented (save failed).');
-      qElapsed = 0;
-      el('q-t').textContent = '00:00.0';
-      qState = 'idle';
-      return;
-    }
-
-    // reduce mainSeconds now (successful save)
-    mainSeconds -= timeSec;
-    if(mainSeconds < 0) mainSeconds = 0;
-    renderMain();
-
-    // prompt result selection (must choose)
-    setTimeout(() => askForResult(entry.t), 120); // small delay so UI updates
-    // reset timer state for next question
-    qElapsed = 0;
-    el('q-t').textContent = '00:00.0';
-    qState = 'idle';
-  }
-
-  // after submitting we must ask for result selection (Correct / Incorrect / Unattempted)
-  function askForResult(timestamp) {
-    // find entry
+  // storage helpers
+  function saveEntry(e){
     const arr = load(PRACT, []);
-    const idx = arr.findIndex(x => x.t === timestamp);
-    if(idx === -1){ renderLogs(); return; }
-    const entry = arr[idx];
-    const choice = prompt('Mark result for this question: correct / incorrect / unattempted', 'correct');
-    if(!choice){
-      // if user cancels, keep it pending but allow them to edit later
-      alert('Kept as pending — you can Edit the log later to set result.');
-      renderLogs();
-      return;
-    }
-    const c = choice.toLowerCase();
-    if(c.includes('correct')) entry.result = 'Correct';
-    else if(c.includes('incorrect')) entry.result = 'Incorrect';
-    else entry.result = 'Unattempted';
-    // if result changed and was correct & points > 0, we already added XP at save; but if unattempted we may want to zero points:
-    if(entry.result === 'Incorrect'){ entry.points = 0; }
-    // For Unattempted keep points as-is (you might merge later)
-    arr[idx] = entry;
+    // dedupe by timestamp t
+    if(arr.some(x => x.t === e.t)) return false;
+    arr.push(e);
+    save(PRACT, arr);
+    return true;
+  }
+  function deleteLog(ts){
+    let arr = load(PRACT, []);
+    arr = arr.filter(x => x.t !== ts);
+    save(PRACT, arr);
+    renderLogs();
+  }
+  function updateLogResult(ts, newResult){
+    const arr = load(PRACT, []);
+    const i = arr.findIndex(x => x.t === ts);
+    if(i === -1) return;
+    const old = arr[i];
+    arr[i] = Object.assign({}, old, { result: newResult });
+    // handle XP effects: if marking incorrect, set points = 0
+    if(newResult === 'Incorrect') arr[i].points = 0;
     save(PRACT, arr);
     renderLogs();
   }
 
-  // merging exactly 2 selected logs (same session)
-  function mergeSelected() {
-    const checks = Array.from(document.querySelectorAll('.merge-checkbox') || []).filter(c=>c.checked);
-    if(checks.length !== 2){ alert('Select exactly 2 logs to merge'); return; }
+  // start / pause / resume / submit question
+  function qStartHandler(){
+    if(!gtaRunning) { alert('Start GTA session first'); return; }
+    if(qState === 'running') return;
+    // start new question cycle
+    qNumber += 1;
+    qStart = Date.now() - qElapsed;
+    qInterval = setInterval(()=> {
+      qElapsed = Date.now() - qStart;
+      el('q-timer').textContent = fmtMS(qElapsed);
+    }, 100);
+    qState = 'running';
+    renderHeader();
+  }
+  function qPauseHandler(){
+    if(qState !== 'running') return;
+    clearInterval(qInterval); qInterval = null;
+    qState = 'paused';
+    renderHeader();
+  }
+  function qResumeHandler(){
+    if(qState !== 'paused') return;
+    qStart = Date.now() - qElapsed;
+    qInterval = setInterval(()=> {
+      qElapsed = Date.now() - qStart;
+      el('q-timer').textContent = fmtMS(qElapsed);
+    }, 100);
+    qState = 'running';
+    renderHeader();
+  }
+  function qResetStateAfterSubmit(){
+    // clear timer & reset state so next question can start cleanly
+    if(qInterval) clearInterval(qInterval);
+    qInterval = null;
+    qElapsed = 0;
+    qState = 'idle';
+    el('q-timer').textContent = '00:00.0';
+    renderHeader();
+  }
+
+  function qSubmitHandler(){
+    if(qState === 'paused'){ alert('Resume before submitting.'); return; }
+    if(qState !== 'running'){ alert('Start the question before submitting.'); return; }
+    // stop timer
+    if(qInterval) { clearInterval(qInterval); qInterval = null; }
+    const timeSec = Math.round((qElapsed||0)/1000);
+    // check against mainSeconds
+    if(timeSec > mainSeconds){
+      alert('Time exceeded remaining main time — submission rejected. Session continues.');
+      // reset question state for retry (do not reduce mainSeconds)
+      qResetStateAfterSubmit();
+      return;
+    }
+    // prepare entry (pending result)
+    const name = el('gta-session').value || localStorage.getItem('su_default_gta') || ('GTA_'+new Date().toISOString().slice(0,10)+'_'+Math.floor(Math.random()*1000));
+    el('gta-session').value = name;
+    localStorage.setItem('su_default_gta', name);
+    const sessionKey = 'GTA:'+name;
+    const sub = el('gta-sub').value || 'Mixed';
+    const diff = el('gta-diff').value || 'Mixed';
+    const pts = calcPoints(timeSec, diff);
+    const entry = { session: sessionKey, subject: sub, topic: '', diff, time: timeSec, points: pts, result: 'Pending', q: qNumber, t: Date.now() };
+    const ok = saveEntry(entry);
+    if(!ok){
+      alert('Duplicate prevented (try again).');
+      qResetStateAfterSubmit();
+      return;
+    }
+    // reduce mainSeconds (static main timer updated only on save)
+    mainSeconds -= timeSec;
+    if(mainSeconds < 0) mainSeconds = 0;
+    renderHeader();
+    renderLogs();
+
+    // immediate result UI (three big buttons) like Practice but inline modal-like:
+    showResultSelector(entry.t);
+
+    // reset question to allow next question
+    qResetStateAfterSubmit();
+  }
+
+  // result UI (non-blocking) - place temporary overlay/panel near the top of logs
+  function showResultSelector(ts){
+    const sessionRoot = el('gta-log-list');
+    // build a small floating panel
+    const panel = document.createElement('div');
+    panel.className = 'card';
+    panel.style.position = 'sticky';
+    panel.style.top = '8px';
+    panel.style.zIndex = 40;
+    panel.style.display = 'flex';
+    panel.style.flexDirection = 'column';
+    panel.style.gap = '8px';
+    panel.innerHTML = `<div class="h1">Mark Result</div><div class="small">Choose result for the last submitted question</div>`;
+    const btnRow = document.createElement('div'); btnRow.style.display='flex'; btnRow.style.gap='8px';
+    const bC = document.createElement('button'); bC.className='btn'; bC.textContent='🟩 Correct';
+    const bI = document.createElement('button'); bI.className='btn'; bI.textContent='❌ Incorrect';
+    const bU = document.createElement('button'); bU.className='btn ghost'; bU.textContent='◯ Unattempted';
+    btnRow.appendChild(bC); btnRow.appendChild(bI); btnRow.appendChild(bU);
+    panel.appendChild(btnRow);
+    // insert panel at top
+    sessionRoot.parentNode.insertBefore(panel, sessionRoot);
+
+    function clearPanel(){
+      if(panel && panel.parentNode) panel.parentNode.removeChild(panel);
+      renderLogs();
+      updateMergeButtons();
+    }
+
+    function applyResult(choice){
+      const arr = load(PRACT, []);
+      const i = arr.findIndex(x => x.t === ts);
+      if(i === -1){ clearPanel(); return; }
+      const entry = arr[i];
+      if(choice === 'Correct'){ entry.result = 'Correct'; /* points already saved */ }
+      else if(choice === 'Incorrect'){ entry.result = 'Incorrect'; entry.points = 0; }
+      else { entry.result = 'Unattempted'; /* keep points so can merge later */ }
+      arr[i] = entry;
+      save(PRACT, arr);
+      // award extra XP only if result is correct AND points > 0: but points were given at save time already.
+      // If you want to give immediate XP for marking correct and previously 'pending' had not added XP, adapt here.
+      clearPanel();
+    }
+
+    bC.onclick = ()=> applyResult('Correct');
+    bI.onclick = ()=> applyResult('Incorrect');
+    bU.onclick = ()=> applyResult('Unattempted');
+  }
+
+  // Merge exactly 2 selected logs
+  function mergeHandler(){
+    const checks = Array.from(document.querySelectorAll('.merge-cb') || []).filter(c=> c.checked);
+    if(checks.length !== 2) return alert('Select exactly 2 logs to merge.');
     const t1 = Number(checks[0].dataset.t), t2 = Number(checks[1].dataset.t);
     const arr = load(PRACT, []);
-    const l1 = arr.find(x => x.t === t1), l2 = arr.find(x => x.t === t2);
-    if(!l1 || !l2){ alert('Selected logs not found'); return; }
+    const l1 = arr.find(x=> x.t === t1), l2 = arr.find(x=> x.t === t2);
+    if(!l1 || !l2) return alert('Selected logs not found.');
     // ensure same session
-    if(l1.session !== l2.session){ if(!confirm('Logs belong to different sessions. Merge anyway?')) return; }
-    // combined
+    if(l1.session !== l2.session){
+      if(!confirm('Selected logs are from different sessions. Merge anyway?')) return;
+    }
+    // compute combined
     const combinedTime = (Number(l1.time)||0) + (Number(l2.time)||0);
-    // new result = result of second selected log (we keep order of checkboxes)
-    const newResult = l2.result || 'pending';
-    // difficulty - prefer l2.diff else l1
+    // result = result of second selected (order is checkbox order)
+    const newResult = l2.result || 'Pending';
     const newDiff = l2.diff || l1.diff || 'Mixed';
-    const newQ = l2.q || l1.q || Math.min(l1.q||9999, l2.q||9999);
-    // recalc points using combined time
-    const newPoints = calcGtaPoints(Math.round(combinedTime), newDiff);
-    // create new entry
-    const newEntry = { session: l1.session, subject: l2.subject || l1.subject, topic: (l1.topic||'') + (l2.topic? ' + '+l2.topic:''), diff: newDiff, time: Math.round(combinedTime), points: newPoints, result: newResult, q: newQ, t: Date.now() };
-    // remove the two old entries and add new one
+    const newQ = Math.min(l1.q||9999, l2.q||9999);
+    const newPoints = calcPoints(Math.round(combinedTime), newDiff);
+
+    const newEntry = { session: l1.session, subject: l2.subject || l1.subject, topic: (l1.topic||'') + (l2.topic? ' + '+l2.topic : ''), diff: newDiff, time: Math.round(combinedTime), points: newPoints, result: newResult, q: newQ, t: Date.now() };
+
+    // remove old and add new
     const remaining = arr.filter(x => x.t !== t1 && x.t !== t2);
-    // save undo info
+    // store undo info
     lastMerge = { removed: [l1, l2], added: newEntry };
     remaining.push(newEntry);
     save(PRACT, remaining);
-    // update XP: we previously added XP for old entries at their save time; to "recalculate" we can:
-    // approach: deduct old XP and add new XP. But we don't track source XP separately — a pragmatic approach:
-    // Recompute delta: subtract old entries' points (as they were added earlier) and add newPoints.
-    // We'll adjust by adding (newPoints - (old1.points + old2.points)) XP to user.
+
+    // XP adjustment: previously points for l1 + l2 were already given at their saves.
+    // As per decision, recalc XP based on combined time -> newPoints.
+    // We add deltaXP = newPoints - (old1.points + old2.points) if positive; do not subtract negative (safer).
     const oldSum = (Number(l1.points)||0) + (Number(l2.points)||0);
-    const diffXP = newPoints - oldSum;
-    if(diffXP > 0) addXP(diffXP,'merge_bonus'); // if positive, add XP
-    else if(diffXP < 0){
-      // No reliable direct negative XP function provided — to keep things simple,
-      // we won't subtract XP if merged reduces points. (Alternatively, we could store XP history.)
-      // We'll notify user instead.
-      console.log('Merge reduced XP by', -diffXP, 'but XP subtraction is not applied to avoid negative effects.');
+    const delta = newPoints - oldSum;
+    if(delta > 0) addXP(delta, 'merge'); // reward delta
+    else {
+      // do not subtract XP to prevent negative surprises; but inform user
+      console.log('Merged reduced total points by', -delta, '- no XP subtraction applied.');
     }
-    alert(`Merged logs.\nNew time: ${newEntry.time}s • Result: ${newEntry.result} • Points: ${newEntry.points}`);
+
+    alert(`Merged logs — new time ${newEntry.time}s • result ${newEntry.result} • points ${newEntry.points}`);
     renderLogs();
-    updateMergeControls();
+    updateMergeButtons();
   }
 
   function undoMerge(){
-    if(!lastMerge){ alert('No merge to undo'); return; }
+    if(!lastMerge) return alert('No merge to undo.');
     const arr = load(PRACT, []);
-    // remove the added entry
+    // remove added
     const remaining = arr.filter(x => x.t !== lastMerge.added.t);
-    // add back removed logs
+    // put back removed
     remaining.push(...lastMerge.removed);
     save(PRACT, remaining);
-    // No xp adjustments reversed for simplicity (complex to reliably rollback)
-    alert('Undo performed (logs restored).');
+    alert('Undo merge done (restored previous logs).');
     lastMerge = null;
     renderLogs();
-    updateMergeControls();
+    updateMergeButtons();
   }
 
-  // export current session to XLSX
-  function exportSession(){
-    const name = el('gta-name').value || localStorage.getItem('su_default_gta') || '';
+  // export current session logs to excel
+  function exportHandler(){
+    const name = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
+    if(!name) return alert('Set session name first.');
     const session = 'GTA:'+name;
-    const all = load(PRACT, []).filter(x => x.session === session);
-    if(!all.length){ alert('No logs for session'); return; }
+    const all = load(PRACT, []).filter(x=> x.session === session);
+    if(!all.length) return alert('No logs to export.');
     const seen = {}; const unique = [];
-    all.forEach(r => { if(!seen[r.t]){ seen[r.t] = true; unique.push(r); }});
-    const ws = [['Date','Session','Question#','Subject','Topic','Difficulty','Time(s)','Result','Points']];
+    all.forEach(r => { if(!seen[r.t]){ seen[r.t]=true; unique.push(r); } });
+    const ws = [['Date','Session','Q#','Subject','Topic','Difficulty','Time(s)','Result','Points']];
     unique.forEach(r => ws.push([ new Date(r.t).toLocaleString(), r.session, r.q||'', r.subject, r.topic||'', r.diff, r.time, r.result, r.points ]));
-    const wb = XLSX.utils.book_new();
-    const ws1 = XLSX.utils.aoa_to_sheet(ws);
-    XLSX.utils.book_append_sheet(wb, ws1, 'GTA');
-    XLSX.writeFile(wb, 'Sunstrike_GTA_'+(name||'session')+'.xlsx');
+    const wb = XLSX.utils.book_new(); const ws1 = XLSX.utils.aoa_to_sheet(ws);
+    XLSX.utils.book_append_sheet(wb, ws1, 'GTA'); XLSX.writeFile(wb, 'Sunstrike_GTA_'+name+'.xlsx');
   }
 
   // clear session logs
   function clearSession(){
-    const name = el('gta-name').value || localStorage.getItem('su_default_gta') || '';
+    const name = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
     if(!name) return alert('No session name set');
-    if(!confirm('Clear ALL logs for this GTA session?')) return;
-    const session = 'GTA:'+name;
+    if(!confirm('Clear ALL logs for this session?')) return;
     let arr = load(PRACT, []);
-    arr = arr.filter(x => x.session !== session);
+    arr = arr.filter(x => x.session !== ('GTA:'+name));
     save(PRACT, arr);
     renderLogs();
   }
 
   // start/stop GTA session
   el('gta-start').addEventListener('click', ()=>{
-    if(gtaRunning){ alert('GTA already running'); return; }
-    const tn = Number(el('gta-total').value || 180);
-    mainSeconds = tn * 60;
-    el('main-t').textContent = fmtMain(mainSeconds);
-    // default session name if empty
-    el('gta-name').value = el('gta-name').value || ('GTA_'+new Date().toISOString().slice(0,10)+'_'+Math.floor(Math.random()*1000));
-    localStorage.setItem('su_default_gta', el('gta-name').value);
+    if(gtaRunning) return alert('GTA already running');
+    const tn = Number(el('gta-total').value||180);
+    mainSeconds = tn*60;
+    el('main-time').textContent = fmtMain(mainSeconds);
+    // ensure session name
+    el('gta-session').value = el('gta-session').value || ('GTA_'+new Date().toISOString().slice(0,10)+'_'+Math.floor(Math.random()*1000));
+    localStorage.setItem('su_default_gta', el('gta-session').value);
     gtaRunning = true;
-    currentQNum = 0;
-    resetQuestionTimer();
+    qNumber = 0;
+    qElapsed = 0;
+    qState = 'idle';
+    renderHeader();
     renderLogs();
-    alert('GTA started — main time set to '+tn+' minutes (static until question submits).');
+    alert('GTA started ('+tn+' min). Main timer is static and deducts time only when you submit questions.');
   });
-
-  el('gta-stop').addEventListener('click', ()=>{
+  el('gta-end').addEventListener('click', ()=>{
     if(!gtaRunning) return;
     if(!confirm('End GTA session now?')) return;
     gtaRunning = false;
-    renderMain();
+    renderHeader();
   });
 
-  // per-question controls
-  el('q-start').addEventListener('click', () => {
-    if(!gtaRunning){ alert('Start GTA first'); return; }
-    // start question
-    startQuestion();
-    // mark submit enabled
-    el('q-submit').disabled = false;
-  });
+  // question controls
+  el('q-start').addEventListener('click', qStartHandler);
+  el('q-pause').addEventListener('click', qPauseHandler);
+  el('q-resume').addEventListener('click', qResumeHandler);
+  el('q-submit').addEventListener('click', qSubmitHandler);
 
-  el('q-pause').addEventListener('click', () => {
-    pauseQuestion();
-  });
-
-  el('q-resume').addEventListener('click', () => {
-    resumeQuestion();
-  });
-
-  el('q-submit').addEventListener('click', () => {
-    // cannot submit while paused
-    if(qState === 'paused'){ alert('Resume before submitting'); return; }
-    submitQuestion();
-    // re-render logs
-    renderLogs();
-  });
-
-  // merge controls
-  el('merge-btn').addEventListener('click', mergeSelected);
+  // merge/export/undo/clear
+  el('merge').addEventListener('click', mergeHandler);
   el('undo-merge').addEventListener('click', undoMerge);
-  el('gta-export').addEventListener('click', exportSession);
-  el('clear-session').addEventListener('click', clearSession);
+  el('gta-export').addEventListener('click', exportHandler);
+  el('gta-clear-session').addEventListener('click', clearSession);
 
-  // toggle UI for pause/resume buttons by listening to qState changes via renderMain
-  // but we also need to enable/disable q-start based on gtaRunning
-  // initial render
-  renderMain();
-  renderLogs();
-
-  // observe storage changes to refresh logs (if edits done in other tabs)
-  window.addEventListener('storage', (e) => {
-    if(e.key === PRACT || e.key === 'su_tests_updated') renderLogs();
+  // refresh UI when storage changes (multi-tab)
+  window.addEventListener('storage', (e)=>{
+    if(e.key === PRACT) renderLogs();
   });
+
+  // initial render
+  renderHeader();
+  renderLogs();
 
 })();
 </script>
