@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Calculations Lab</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="header"><div class="brand">Calculations Lab</div><div class="nav"><a href="index.html">Dashboard</a><a href="practice.html">Practice</a><a href="gta.html">GTA</a><a href="calc.html" class="active">Calculations</a><a href="progress.html">Progress</a><a href="tests.html">Tests</a></div></div>
+
+  <main>
+    <div class="card">
+      <div class="h1">Calculate & Time</div>
+      <div class="small">Type expression (use ^ for power, sqrt() for square root). Timer starts when you generate. On submit, log saved.</div>
+
+      <div style="margin-top:10px">
+        <input id="expr" class="input" placeholder="e.g. 12*34 + 5^2 or sqrt(81)">
+        <div style="margin-top:8px" class="row">
+          <button id="gen" class="btn">Generate & Start</button>
+          <button id="csubmit" class="btn">Submit</button>
+          <button id="cexport" class="btn">Export</button>
+        </div>
+        <div style="margin-top:12px" class="h1" id="ct">00:00.0</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="utils.js"></script>
+<script>
+let ctimer=null,cstart=0,celapsed=0;
+function fmt(ms){const s=Math.floor(ms/1000);const mm=String(Math.floor(s/60)).padStart(2,'0');const ss=String(s%60).padStart(2,'0');const t=Math.floor(ms%1000/100);return `${mm}:${ss}.${t}`}
+document.getElementById('gen').addEventListener('click', ()=>{
+  if(ctimer) return;
+  cstart=Date.now()-celapsed;
+  ctimer=setInterval(()=>{ celapsed=Date.now()-cstart; document.getElementById('ct').textContent=fmt(celapsed); },100);
+});
+document.getElementById('csubmit').addEventListener('click', ()=>{
+  if(ctimer) clearInterval(ctimer); ctimer=null;
+  const timeSec=Math.round((celapsed||0)/1000);
+  const expr=document.getElementById('expr').value||'calc';
+  const points=Math.max(1, Math.round(20 - Math.floor(timeSec/3)));
+  const entry={ session:'Calc', subject:'Calc', topic:expr, diff:'Calc', time:timeSec, points, result:'Done', t: Date.now() };
+  if(savePracticeEntry(entry)){ addXP(points,'calc'); alert('Saved calc +'+points+' XP'); } else alert('Duplicate prevented');
+  celapsed=0; document.getElementById('ct').textContent='00:00.0';
+});
+document.getElementById('cexport').addEventListener('click', ()=>{
+  const all=load(SU.KEYS.PRACTICE,[]);
+  const sel=all.filter(x=> x.session==='Calc');
+  if(!sel.length){ alert('No calc logs'); return; }
+  const ws=[['Date','Expr','Time(s)','Points']]; sel.forEach(r=> ws.push([ new Date(r.t).toLocaleString(), r.topic, r.time, r.points ]));
+  const wb=XLSX.utils.book_new(); const ws1=XLSX.utils.aoa_to_sheet(ws); XLSX.utils.book_append_sheet(wb, ws1, 'Calc'); XLSX.writeFile(wb, 'Sunstrike_Calc_'+new Date().toISOString().slice(0,10)+'.xlsx');
+});
+</script>
+</body>
+</html>

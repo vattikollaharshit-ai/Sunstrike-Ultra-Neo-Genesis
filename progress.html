@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Progress — Sunstrike</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="header"><div class="brand">Progress Pulse</div><div class="nav"><a href="index.html">Dashboard</a><a href="practice.html">Practice</a><a href="gta.html">GTA</a><a href="calc.html">Calculations</a><a href="progress.html" class="active">Progress</a><a href="tests.html">Tests</a></div></div>
+
+  <main>
+    <div class="card"><div class="h1">XP Trend</div><div class="canvas-wrap"><canvas id="xp" width="700" height="140"></canvas></div></div>
+    <div class="card"><div class="h1">Maths Trend</div><div class="canvas-wrap"><canvas id="m" width="700" height="120"></canvas></div></div>
+    <div class="card"><div class="h1">Physics Trend</div><div class="canvas-wrap"><canvas id="p" width="700" height="120"></canvas></div></div>
+    <div class="card"><div class="h1">Chemistry Trend</div><div class="canvas-wrap"><canvas id="c" width="700" height="120"></canvas></div></div>
+    <div class="card"><div class="h1">Overall</div><div class="canvas-wrap"><canvas id="overall" width="700" height="160"></canvas></div></div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="utils.js"></script>
+<script>
+function draw(){
+  const wk=load(SU.KEYS.WEEK,{});
+  const labels=Object.keys(wk).slice(-30);
+  const xp=labels.map(d=> wk[d]||0);
+
+  function cfg(id,type,data,opts){
+    const ctx=document.getElementById(id).getContext('2d');
+    if(window[id]) window[id].destroy();
+    window[id] = new Chart(ctx, Object.assign({type:type, data:data, options:opts||{}}, {}));
+  }
+
+  cfg('xp','line',{labels:labels.length?labels:['No data'], datasets:[{label:'Daily XP', data: xp, borderColor:'#a855f7', backgroundColor:'rgba(168,85,247,0.12)', fill:true}]},{responsive:true, scales:{y:{beginAtZero:true}}});
+
+  const tests=load(SU.KEYS.TESTS,[]).slice().sort((a,b)=> (a.t||0)-(b.t||0));
+  const lab = tests.map(t=> t.name || new Date(t.t).toLocaleDateString());
+  const m = tests.map(t=> t.m||null);
+  const p = tests.map(t=> t.p||null);
+  const c = tests.map(t=> t.c||null);
+  const total = tests.map(t=> t.total||null);
+  const perc = tests.map(t=> t.perc||null);
+
+  cfg('m','line',{labels:lab, datasets:[{label:'Maths', data:m, borderColor:'#ff7b7b', backgroundColor:'rgba(255,123,123,0.06)', fill:false}]},{responsive:true, scales:{y:{beginAtZero:true}}});
+  cfg('p','line',{labels:lab, datasets:[{label:'Physics', data:p, borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,0.06)', fill:false}]},{responsive:true, scales:{y:{beginAtZero:true}}});
+  cfg('c','line',{labels:lab, datasets:[{label:'Chemistry', data:c, borderColor:'#ffd166', backgroundColor:'rgba(255,209,102,0.06)', fill:false}]},{responsive:true, scales:{y:{beginAtZero:true}}});
+
+  const ctxO=document.getElementById('overall').getContext('2d');
+  if(window._o) window._o.destroy();
+  window._o = new Chart(ctxO, {
+    data:{
+      labels: lab,
+      datasets:[
+        { type:'bar', label:'Total', data: total, backgroundColor:'rgba(168,85,247,0.6)' },
+        { type:'line', label:'Percentile', data: perc, borderColor:'#ffffff', yAxisID:'pct' }
+      ]
+    },
+    options:{ responsive:true, scales:{ y:{ beginAtZero:true }, pct:{ position:'right', min:0, max:100, grid:{ drawOnChartArea:false } } } }
+  });
+}
+
+window.addEventListener('load', ()=>{ draw(); setInterval(draw,3000); });
+window.addEventListener('storage',(e)=>{ if(e.key===SU.KEYS.TESTS || e.key==='su_tests_updated') draw(); });
+</script>
+</body>
+</html>

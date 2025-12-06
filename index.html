@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sunstrike Ultra — HUD</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="brand">🌒 Sunstrike Ultra — HUD</div>
+    <div class="nav">
+      <a href="index.html" class="active">Dashboard</a>
+      <a href="practice.html">Practice</a>
+      <a href="gta.html">GTA</a>
+      <a href="calc.html">Calculations</a>
+      <a href="progress.html">Progress</a>
+      <a href="tests.html">Tests</a>
+    </div>
+  </div>
+
+  <main>
+    <div class="card hud">
+      <div class="hud-left">
+        <div class="h1">Mission Panel</div>
+        <div class="small">Focus: timed practice & GTA sessions — Solo-Leveling HUD style.</div>
+        <div style="margin-top:12px" id="mission-list" class="list small"></div>
+      </div>
+
+      <div class="hud-right">
+        <div class="h1">Player</div>
+        <div id="statsRow" class="row"></div>
+
+        <div style="margin-top:12px">
+          <div class="small">Level</div>
+          <div id="level">1</div>
+          <div style="margin-top:8px" class="small">XP</div>
+          <div class="xp-bar"><div id="xpfill" class="xp-fill"></div></div>
+
+          <div style="margin-top:8px" class="row">
+            <div class="stat"><div class="small">Skill Points</div><div id="sp">0</div></div>
+            <div class="stat"><div class="small">Title</div><div id="title">Rookie</div></div>
+          </div>
+
+          <div style="margin-top:12px" class="row">
+            <button id="allocBtn" class="btn">Allocate Point</button>
+            <button id="resetBtn" class="btn ghost">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<footer>Sunstrike Ultra — Solo-Leveling HUD</footer>
+
+<script src="utils.js"></script>
+<script>
+function refresh(){
+  const s=getStats();
+  document.getElementById('level').textContent = s.level||1;
+  document.getElementById('sp').textContent = s.skillPoints||0;
+  document.getElementById('title').textContent = s.title||'';
+  const pct = Math.min(100, Math.round((s.xp||0)/(s.xpToNext||100)*100));
+  document.getElementById('xpfill').style.width = pct + '%';
+
+  const row=document.getElementById('statsRow'); row.innerHTML='';
+  Object.entries(s.stats||{}).forEach(([k,v])=>{
+    const d=document.createElement('div'); d.className='stat';
+    d.innerHTML = `<div class='small'>${k}</div><div>${v}</div>`;
+    row.appendChild(d);
+  });
+}
+refresh();
+
+document.getElementById('allocBtn').addEventListener('click', ()=>{
+  const stat=prompt('Stat to increase? Speed, Intelligence, Vitality, Endurance, Focus, Agility');
+  if(!stat) return;
+  if(allocatePoint(stat)){ alert('Allocated to '+stat); refresh(); }
+  else alert('No skill points');
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Reset all data?')){ localStorage.clear(); ensureStats(); refresh(); }
+});
+
+// sample missions
+(function(){
+  const m=document.getElementById('mission-list'); m.innerHTML='';
+  const missions=[{t:'Do 20 timed calculations'},{t:'Finish 30 practice Qs'},{t:'Complete a 3-hour GTA'}];
+  missions.forEach(mm=>{
+    const e=document.createElement('div'); e.className='topic';
+    e.innerHTML = `<div><strong>${mm.t}</strong><div class='small'>Bonus XP</div></div><div><button class='btn ghost' onclick='alert("Start this mission from Practice or GTA")'>Go</button></div>`;
+    m.appendChild(e);
+  });
+})();
+</script>
+</body>
+</html>

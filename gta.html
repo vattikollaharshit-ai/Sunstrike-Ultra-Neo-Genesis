@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GTA — Grand Test Assessment</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="brand">GTA — Grand Test Assessment</div>
+    <div class="nav">
+      <a href="index.html">Dashboard</a>
+      <a href="practice.html">Practice</a>
+      <a href="gta.html" class="active">GTA</a>
+      <a href="calc.html">Calculations</a>
+      <a href="progress.html">Progress</a>
+      <a href="tests.html">Tests</a>
+    </div>
+  </div>
+
+  <main>
+    <div class="card">
+      <div class="h1">Start GTA Session</div>
+      <div class="small">Forced exam flow: solve from your paper; for each question Start → Solve → Submit. Time is subtracted from main countdown; if you take more than remaining main time the question is NOT saved and session ends.</div>
+
+      <div style="margin-top:10px">
+        <label class="small">Session Name</label>
+        <input id="gta-name" class="input" placeholder="">
+        <div style="margin-top:8px" class="row">
+          <label class="small">Total Time (minutes)</label>
+          <select id="gta-total" class="input" style="width:160px"><option>180</option><option>120</option><option>90</option><option>60</option></select>
+          <label class="small">Subject</label>
+          <select id="gta-sub" class="input" style="width:160px"><option>Mixed</option><option>Maths</option><option>Physics</option><option>Chemistry</option></select>
+          <label class="small">Difficulty</label>
+          <select id="gta-diff" class="input" style="width:160px"><option>Mixed</option><option>Easy</option><option>Medium</option><option>Hard</option></select>
+        </div>
+
+        <div style="margin-top:12px" class="row">
+          <button id="gta-start" class="btn">Start GTA</button>
+          <button id="gta-stop" class="btn ghost">End Session</button>
+        </div>
+
+        <div style="margin-top:12px" class="h1"><span class="small">Main time left:</span> <span id="main-t">03:00:00</span></div>
+        <div style="margin-top:6px" class="h1"><span class="small">Question timer:</span> <span id="q-t">00:00.0</span></div>
+
+        <div style="margin-top:8px" class="row">
+          <button id="q-start" class="btn">Start Q</button>
+          <button id="q-submit" class="btn">Submit Q (save)</button>
+          <button id="q-export" class="btn">Export GTA</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="h1">Session Logs</div>
+      <div id="gta-list" class="list small"></div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="utils.js"></script>
+<script>
+let mainSeconds=180*60, mainInterval=null, qTimer=null, qStart=0, qElapsed=0, gtaRunning=false;
+function fmtMS(ms){const s=Math.floor(ms/1000);const mm=String(Math.floor(s/60)).padStart(2,'0');const ss=String(s%60).padStart(2,'0');const t=Math.floor(ms%1000/100);return `${mm}:${ss}.${t}`}
+function fmtMain(sec){ if(sec<0) sec=0; const h=Math.floor(sec/3600); const m=Math.floor((sec%3600)/60); const s=Math.floor(sec%60); return [String(h).padStart(2,'0'),String(m).padStart(2,'0'),String(s).padStart(2,'0')].join(':'); }
+
+function renderGTA(){
+  const root=document.getElementById('gta-list'); root.innerHTML='';
+  const arr=load(SU.KEYS.PRACTICE,[]).filter(x=> x.session && x.session.startsWith('GTA:'));
+  arr.slice().reverse().forEach(a=>{
+    const d=document.createElement('div'); d.className='topic';
+    d.innerHTML = `<div><strong>${a.subject} • ${a.topic||''}</strong><div class='small'>${a.diff} • ${a.time}s • ${new Date(a.t).toLocaleString()}</div></div><div class='small'>${a.result}</div>`;
+    root.appendChild(d);
+  });
+}
+
+document.getElementById('gta-start').addEventListener('click', ()=>{
+  if(gtaRunning){ alert('GTA already running'); return; }
+  const tn=Number(document.getElementById('gta-total').value||180);
+  mainSeconds=tn*60;
+  document.getElementById('main-t').textContent=fmtMain(mainSeconds);
+  document.getElementById('gta-name').value = document.getElementById('gta-name').value || ('GTA_'+new Date().toISOString().slice(0,10)+'_'+Math.floor(Math.random()*1000));
+  gtaRunning=true;
+  mainInterval=setInterval(()=>{ mainSeconds--; document.getElementById('main-t').textContent=fmtMain(mainSeconds); if(mainSeconds<=0) endGTA('Time over'); },1000);
+  alert('GTA started — main time set to '+tn+' minutes');
+});
+
+document.getElementById('gta-stop').addEventListener('click', ()=>{ if(!gtaRunning) return; if(confirm('End session now?')) endGTA('Manually ended'); });
+
+document.getElementById('q-start').addEventListener('click', ()=>{
+  if(!gtaRunning){ alert('Start GTA first'); return; }
+  if(qTimer) return;
+  qStart = Date.now()-qElapsed;
+  qTimer = setInterval(()=>{ qElapsed = Date.now()-qStart; document.getElementById('q-t').textContent = fmtMS(qElapsed); }, 100);
+});
+
+document.getElementById('q-submit').addEventListener('click', ()=>{
+  if(!gtaRunning){ alert('Start GTA first'); return; }
+  if(!qTimer){ alert('Start question timer first'); return; }
+  clearInterval(qTimer); qTimer=null;
+  const timeSec = Math.round((qElapsed||0)/1000);
+  if(timeSec > mainSeconds){
+    alert('Time for this question exceeded remaining main time — this question will NOT be saved. Session ends.');
+    endGTA('Exceeded main time on question');
+    qElapsed=0; document.getElementById('q-t').textContent='00:00.0';
+    return;
+  }
+  const name = document.getElementById('gta-name').value || localStorage.getItem('su_default_gta') || ('GTA_'+new Date().toISOString().slice(0,10));
+  localStorage.setItem('su_default_gta', name);
+  const subject = document.getElementById('gta-sub').value || 'Mixed';
+  const diff = document.getElementById('gta-diff').value || 'Mixed';
+  const topic = prompt('Optional: topic (leave blank)') || '';
+  const points = Math.max(1, Math.round((diff==='Hard'?40:diff==='Medium'?15:diff==='Insane'?80:8) - Math.floor(timeSec/4)));
+  const entry = { session:'GTA:'+name, subject, topic, diff, time:timeSec, points, result:'pending', t:Date.now() };
+  const ok = savePracticeEntry(entry);
+  if(ok){ addXP(points,'gta'); mainSeconds -= timeSec; document.getElementById('main-t').textContent = fmtMain(mainSeconds); alert('Question saved, +'+points+' XP. Remaining main time updated.'); }
+  else { alert('Duplicate prevented'); }
+  qElapsed=0; document.getElementById('q-t').textContent='00:00.0';
+  renderGTA();
+  if(mainSeconds<=0) endGTA('Time finished');
+});
+
+document.getElementById('q-export').addEventListener('click', ()=>{
+  const name=document.getElementById('gta-name').value || localStorage.getItem('su_default_gta');
+  const all=load(SU.KEYS.PRACTICE,[]);
+  const sel=all.filter(x=> x.session==='GTA:'+name);
+  if(!sel.length){ alert('No logs for '+name); return; }
+  const seen={}; const unique=[];
+  sel.forEach(r=>{ if(!seen[r.t]){ seen[r.t]=true; unique.push(r); } });
+  const ws=[['Date','Session','Subject','Topic','Difficulty','Time(s)','Result','Points']];
+  unique.forEach(r=> ws.push([ new Date(r.t).toLocaleString(), r.session, r.subject, r.topic||'', r.diff, r.time, r.result, r.points ]));
+  const wb=XLSX.utils.book_new(); const ws1=XLSX.utils.aoa_to_sheet(ws); XLSX.utils.book_append_sheet(wb, ws1, 'GTA');
+  XLSX.writeFile(wb, 'Sunstrike_GTA_'+name+'.xlsx');
+});
+
+function endGTA(reason){
+  if(mainInterval) clearInterval(mainInterval); mainInterval=null;
+  gtaRunning=false;
+  if(qTimer) clearInterval(qTimer); qTimer=null;
+  qElapsed=0; document.getElementById('q-t').textContent='00:00.0';
+  document.getElementById('main-t').textContent=fmtMain(mainSeconds);
+  alert('GTA ended: '+reason);
+  renderGTA();
+}
+
+window.addEventListener('load', ()=>{ renderGTA(); });
+</script>
+</body>
+</html>
