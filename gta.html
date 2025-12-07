@@ -3,44 +3,87 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>GTA — Practice UI + GTA features</title>
+<title>GTA — Practice UI (Solo-Leveling Animated)</title>
 <link rel="stylesheet" href="styles.css" />
+<style>
+/* GTA-only styling + Solo-Leveling flair */
+:root{
+  --bg:#02020b; --panel:#071026; --accent1:#a855f7; --accent2:#06b6d4; --accent3:#ffb86b;
+  --glow1: 0 8px 30px rgba(168,85,247,0.12);
+}
+body{background:radial-gradient(ellipse at top left,#05030a 0%, #02020b 40%, #03030a 100%); color:#eaf4ff}
+.container{max-width:1100px;margin:16px auto;padding:14px}
+.h1{font-size:18px;color:var(--accent3);margin:0 0 8px;font-weight:700}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));border-radius:14px;padding:14px;margin-top:14px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.input, select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#eaf4ff;margin-top:8px}
+.btn{padding:8px 12px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(90deg,var(--accent2),var(--accent1));color:#021018;font-weight:800}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:#dfeeff}
+.list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.topic{padding:10px;border-radius:10px;background:linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));display:flex;justify-content:space-between;align-items:center;border:1px solid rgba(255,255,255,0.02);position:relative;overflow:hidden}
+.topic.latest{animation:logPulse 1200ms ease both}
+@keyframes logPulse{
+  0%{box-shadow:0 0 0 rgba(168,85,247,0)} 
+  30%{box-shadow:0 0 40px rgba(168,85,247,0.18)} 
+  100%{box-shadow:0 0 12px rgba(6,182,212,0.06)}
+}
+.result-btn{min-width:44px;min-height:36px;border-radius:10px;font-size:16px;border:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.result-btn.correct{background:linear-gradient(90deg,#7c3aed,#a855f7);color:#021018}
+.result-btn.incorrect{background:linear-gradient(90deg,#ef4444,#f97316);color:#fff}
+.result-btn.un{background:linear-gradient(90deg,#60a5fa,#06b6d4);color:#fff;opacity:0.95}
+.badge{font-weight:700;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03)}
+
+/* timer shimmer while running */
+.timer-running { animation: shimmer 900ms linear infinite; }
+@keyframes shimmer {
+  0%{transform: translateY(0) scale(1)}
+  50%{transform: translateY(-1px) scale(1.01)}
+  100%{transform: translateY(0) scale(1)}
+}
+
+/* particle canvas overlay */
+.particle-canvas{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:9999}
+
+/* reduced motion toggle */
+.reduced-toggle{margin-left:8px;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.03);cursor:pointer;color:#dfeeff}
+
+/* small responsive */
+@media(max-width:720px){
+  .row{flex-direction:column}
+  .result-btn{min-width:40px;min-height:36px}
+}
+</style>
 </head>
 <body>
+<canvas id="particle-canvas" class="particle-canvas" aria-hidden="true"></canvas>
+
 <div class="container">
-  <div class="header">
-    <div class="brand">Practice → GTA (Sunstrike)</div>
-    <div class="nav">
-      <a href="index.html">Dashboard</a>
-      <a href="practice.html">Practice</a>
-      <a href="gta.html" class="active">GTA</a>
-      <a href="calc.html">Calculations</a>
-      <a href="progress.html">Progress</a>
-      <a href="tests.html">Tests</a>
+  <div class="header" style="display:flex;align-items:center;gap:12px">
+    <div class="brand">Sunstrike — GTA (Solo-Leveling)</div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <button id="reduced-toggle" class="reduced-toggle">Reduced motion: Off</button>
     </div>
   </div>
 
   <main>
     <div class="card">
-      <div class="h1">GTA Session (Practice UI)</div>
-      <div class="small">Static main timer — time is consumed only when a question is successfully submitted. Use Pause if you step away. You must mark result after submitting.</div>
+      <div class="h1">GTA Session — Practice UI (Animated)</div>
+      <div class="small">Solo-Leveling vibe • Non-blocking submits • Mark later • Merge & export</div>
 
       <div style="margin-top:12px" class="row">
         <div style="flex:1">
           <label class="small">Session Name</label>
           <input id="gta-session" class="input" placeholder="GTA_2025-12-06_001">
         </div>
-        <div style="width:160px">
+        <div style="width:140px">
           <label class="small">Total Time (min)</label>
-          <select id="gta-total" class="input">
-            <option>180</option><option>120</option><option>90</option><option>60</option>
-          </select>
+          <select id="gta-total" class="input"><option>180</option><option>120</option><option>90</option><option>60</option></select>
         </div>
-        <div style="width:160px">
+        <div style="width:140px">
           <label class="small">Subject</label>
           <select id="gta-sub" class="input"><option>Mixed</option><option>Maths</option><option>Physics</option><option>Chemistry</option></select>
         </div>
-        <div style="width:160px">
+        <div style="width:140px">
           <label class="small">Difficulty</label>
           <select id="gta-diff" class="input"><option>Mixed</option><option>Easy</option><option>Medium</option><option>Hard</option><option>Insane</option></select>
         </div>
@@ -56,16 +99,16 @@
       <div style="margin-top:14px" class="row">
         <div style="flex:1" class="card">
           <div class="small">Main time left</div>
-          <div class="h1" id="main-time">03:00:00</div>
+          <div class="h1" id="main-time" style="font-weight:900">03:00:00</div>
         </div>
-        <div style="width:180px" class="card">
+        <div style="width:160px" class="card">
           <div class="small">Question #</div>
           <div class="h1" id="q-number">—</div>
         </div>
-        <div style="width:220px" class="card">
+        <div style="width:280px" class="card">
           <div class="small">Question timer</div>
           <div class="h1" id="q-timer">00:00.0</div>
-          <div style="margin-top:8px;display:flex;gap:8px">
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
             <button id="q-start" class="btn">Start</button>
             <button id="q-pause" class="btn ghost" disabled>Pause</button>
             <button id="q-resume" class="btn ghost" disabled>Resume</button>
@@ -76,52 +119,85 @@
     </div>
 
     <div class="card">
-      <div class="h1">Session Logs (this GTA)</div>
-      <div class="small">Select exactly two logs to enable Merge. After Submit, mark Correct / Incorrect / Unattempted using the three buttons.</div>
-      <div style="margin-top:10px; display:flex; gap:8px;">
-        <button id="merge" class="btn ghost" disabled>Merge Selected (2)</button>
-        <button id="undo-merge" class="btn ghost" disabled>Undo Merge</button>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div class="h1">Session Logs</div><div class="small">Logs appear after submit. Mark result anytime (Correct awards XP).</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="merge" class="btn ghost" disabled>Merge Selected (2)</button>
+          <button id="undo-merge" class="btn ghost" disabled>Undo Merge</button>
+        </div>
       </div>
-      <div id="gta-log-list" class="list small" style="margin-top:12px; max-height:420px; overflow:auto"></div>
+
+      <div id="gta-log-list" class="list small" style="margin-top:12px; max-height:520px; overflow:auto"></div>
     </div>
   </main>
 </div>
 
-<footer>Sunstrike — GTA (Practice UI)</footer>
+<footer style="color:rgba(200,220,255,0.12);text-align:center;padding:14px">Sunstrike Ultra • Solo-Leveling skin</footer>
 
 <!-- SheetJS for Excel export -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="utils.js"></script>
 <script>
-/* GTA implemented on top of Practice UI
-   - static main timer (only reduced on successful submit)
-   - per-question start / pause / resume / submit
-   - submit -> saved pending log -> immediate 3-button result selection
-   - reject if question time > remaining main time (session continues)
-   - merge exactly two selected logs (merge time, result = 2nd selected), recalc XP
-   - undo last merge
-   - export session to XLSX
-   - uses utils.js save/load/addXP functions
+/* Final animated GTA (uses utils.js)
+   - Reduced-motion toggle stored in localStorage ('su_reduced_motion')
+   - Particle canvas for correct-mark bursts (disabled in reduced mode)
+   - No sounds (you requested no SFX)
+   - XP model: B (award only on marking Correct)
 */
 
 (() => {
-  // --- state
+  // ---------- state ----------
   let gtaRunning = false;
-  let mainSeconds = 180*60; // dynamic when started
+  let mainSeconds = 180*60;
   let qNumber = 0;
-
-  // question timer state
   let qState = 'idle'; // idle | running | paused
   let qStart = 0, qElapsed = 0, qInterval = null;
-
-  // last merge undo
   let lastMerge = null;
-
-  // shortcuts
-  const el = id => document.getElementById(id);
   const PRACT = SU.KEYS.PRACTICE;
 
-  // formatters
+  // reduced motion
+  const RED_KEY = 'su_reduced_motion';
+  let reducedMotion = (localStorage.getItem(RED_KEY) === '1');
+
+  // particle system
+  const pCanvas = document.getElementById('particle-canvas');
+  const pCtx = pCanvas.getContext('2d');
+  let particles = [];
+  function resizeCanvas(){ pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight; }
+  resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+
+  function spawnParticles(x,y,color){
+    if(reducedMotion) return;
+    for(let i=0;i<22;i++){
+      particles.push({
+        x, y,
+        vx: (Math.random()-0.5)*6,
+        vy: (Math.random()-0.9)*6 - 2,
+        life: 60 + Math.random()*30,
+        size: 4 + Math.random()*5,
+        color
+      });
+    }
+  }
+  function tickParticles(){
+    if(particles.length===0){ pCtx.clearRect(0,0,pCanvas.width,pCanvas.height); return; }
+    pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.15;
+      p.life--;
+      pCtx.globalAlpha = Math.max(0, p.life/90);
+      pCtx.fillStyle = p.color;
+      pCtx.beginPath();
+      pCtx.arc(p.x,p.y,p.size * (p.life/90),0,Math.PI*2);
+      pCtx.fill();
+      if(p.life<=0) particles.splice(i,1);
+    }
+  }
+  setInterval(tickParticles, 30);
+
+  // ---------- util ----------
+  const el = id => document.getElementById(id);
   function fmtMS(ms){
     const s = Math.floor(ms/1000);
     const mm = String(Math.floor(s/60)).padStart(2,'0');
@@ -130,89 +206,102 @@
     return `${mm}:${ss}.${t}`;
   }
   function fmtMain(sec){
-    if(sec < 0) sec = 0;
-    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.floor(sec%60);
-    return [String(h).padStart(2,'0'), String(m).padStart(2,'0'), String(s).padStart(2,'0')].join(':');
+    if(sec<0) sec=0; const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=Math.floor(sec%60);
+    return [String(h).padStart(2,'0'),String(m).padStart(2,'0'),String(s).padStart(2,'0')].join(':');
   }
-
-  // points calc (same idea as practice)
   function calcPoints(timeSec, diff){
     const base = diff==='Easy'?8:diff==='Medium'?15:diff==='Hard'?40:diff==='Insane'?80:10;
     const pts = Math.max(0, Math.round(base - Math.floor(timeSec/4)));
     return Math.max(1, pts);
   }
 
-  // UI updates
+  // ---------- header / reduced motion ----------
+  function updateReducedToggleUI(){
+    el('reduced-toggle').textContent = 'Reduced motion: ' + (reducedMotion? 'On' : 'Off');
+  }
+  el('reduced-toggle').addEventListener('click', ()=>{
+    reducedMotion = !reducedMotion;
+    localStorage.setItem(RED_KEY, reducedMotion? '1' : '0');
+    updateReducedToggleUI();
+  });
+  updateReducedToggleUI();
+
+  // ---------- render UI ----------
   function renderHeader(){
     el('main-time').textContent = fmtMain(mainSeconds);
-    el('q-number').textContent = qNumber>0? qNumber : '—';
-    el('q-start').disabled = !gtaRunning || qState==='running';
+    el('q-number').textContent = qNumber>0 ? qNumber : '—';
+    // timer shimmer
+    if(qState === 'running' && !reducedMotion) el('q-timer').classList.add('timer-running'); else el('q-timer').classList.remove('timer-running');
+    el('q-start').disabled = !gtaRunning || qState === 'running';
     el('q-pause').disabled = qState !== 'running';
     el('q-resume').disabled = qState !== 'paused';
-    // submit allowed only when running and not paused
-    el('q-submit').disabled = !(qState === 'running');
+    el('q-submit').disabled = qState !== 'running';
   }
 
-  // LOGS UI
+  function autoScrollToLatest(){
+    const root = el('gta-log-list'); root.scrollTop = root.scrollHeight;
+  }
+
   function renderLogs(){
     const sessionName = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
     const root = el('gta-log-list');
     root.innerHTML = '';
-    if(!sessionName) { root.innerHTML = '<div class="small">Set a session name and start.</div>'; disableMerge(); return; }
+    if(!sessionName){ root.innerHTML = '<div class="small">Set a session name and start.</div>'; disableMerge(); return; }
     const sessionKey = 'GTA:' + sessionName;
     const all = load(PRACT, []).filter(x => x.session === sessionKey).sort((a,b)=> (a.t||0)-(b.t||0));
-    if(all.length === 0){ root.innerHTML = '<div class="small">No logs in this session yet.</div>'; disableMerge(); return; }
+    if(all.length === 0){ root.innerHTML = '<div class="small">No logs yet for this session.</div>'; disableMerge(); return; }
 
     all.forEach((log, idx) => {
       const wrap = document.createElement('div'); wrap.className = 'topic';
-      // left: checkbox + info
+      if(idx === all.length-1) wrap.classList.add('latest');
       const left = document.createElement('div'); left.style.display='flex'; left.style.alignItems='center';
-      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'merge-cb'; cb.dataset.t = log.t;
-      cb.style.marginRight = '8px';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'merge-cb'; cb.dataset.t = log.t; cb.style.marginRight='8px';
       left.appendChild(cb);
-      const info = document.createElement('div');
-      info.innerHTML = `<strong>Q${log.q || (idx+1)} • ${log.subject}${log.topic? ' • '+log.topic : ''}</strong><div class="small">${log.diff} • ${log.time}s • ${new Date(log.t).toLocaleString()}</div>`;
+      const info = document.createElement('div'); info.innerHTML = `<strong>Q${log.q || (idx+1)} • ${log.subject}${log.topic? ' • '+log.topic : ''}</strong><div class="small">${log.diff} • ${log.time}s • ${new Date(log.t).toLocaleString()}</div>`;
       left.appendChild(info);
 
-      // right: result buttons + delete
       const right = document.createElement('div'); right.style.display='flex'; right.style.flexDirection='column'; right.style.alignItems='flex-end';
-      const btnRow = document.createElement('div'); btnRow.style.display='flex'; btnRow.style.gap='8px';
-      // result buttons (match practice style)
-      const btnCorrect = document.createElement('button'); btnCorrect.className='btn'; btnCorrect.textContent='🟩';
-      const btnIncorrect = document.createElement('button'); btnIncorrect.className='btn'; btnIncorrect.textContent='❌';
-      const btnUn = document.createElement('button'); btnUn.className='btn ghost'; btnUn.textContent='◯';
-      // visually mark current selection
-      function styleResultButtons(){
-        btnCorrect.style.opacity = log.result==='Correct'? '1' : '0.6';
-        btnIncorrect.style.opacity = log.result==='Incorrect'? '1' : '0.6';
-        btnUn.style.opacity = (log.result==='Unattempted' || log.result==='Not Attempted')? '1' : '0.6';
+      const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center';
+
+      // buttons
+      const bCorrect = document.createElement('button'); bCorrect.className='result-btn correct'; bCorrect.textContent=' ✅';
+      const bIncorrect = document.createElement('button'); bIncorrect.className='result-btn incorrect'; bIncorrect.textContent='❌';
+      const bUn = document.createElement('button'); bUn.className='result-btn un'; bUn.textContent='◯';
+
+      // badge
+      const badge = document.createElement('div'); badge.className='badge';
+      badge.textContent = `${log.points} pts${log.awarded? ' ✓' : ''}`;
+
+      // style according to result
+      function refreshButtons(){
+        bCorrect.style.opacity = log.result==='Correct'? '1' : '0.6';
+        bIncorrect.style.opacity = log.result==='Incorrect'? '1' : '0.6';
+        bUn.style.opacity = log.result==='Unattempted' || log.result==='Pending'? '1' : '0.6';
+        badge.textContent = `${log.points} pts${log.awarded? ' ✓' : ''}`;
       }
-      styleResultButtons();
+      refreshButtons();
 
-      btnCorrect.onclick = () => { updateLogResult(log.t, 'Correct'); };
-      btnIncorrect.onclick = () => { updateLogResult(log.t, 'Incorrect'); };
-      btnUn.onclick = () => { updateLogResult(log.t, 'Unattempted'); };
+      // handlers
+      bCorrect.addEventListener('click', ()=> markResult(log.t, 'Correct', bCorrect));
+      bIncorrect.addEventListener('click', ()=> markResult(log.t, 'Incorrect', bIncorrect));
+      bUn.addEventListener('click', ()=> markResult(log.t, 'Unattempted', bUn));
 
-      btnRow.appendChild(btnCorrect); btnRow.appendChild(btnIncorrect); btnRow.appendChild(btnUn);
+      row.appendChild(bCorrect); row.appendChild(bIncorrect); row.appendChild(bUn); row.appendChild(badge);
 
       const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Delete';
-      del.onclick = () => { if(!confirm('Delete this log?')) return; deleteLog(log.t); };
+      del.onclick = ()=> { if(!confirm('Delete this log?')) return; let arr = load(PRACT, []); arr = arr.filter(x => x.t !== log.t); save(PRACT, arr); renderLogs(); };
 
-      right.appendChild(btnRow);
-      right.appendChild(del);
+      right.appendChild(row); right.appendChild(del);
 
       const container = document.createElement('div'); container.style.display='flex'; container.style.justifyContent='space-between'; container.style.alignItems='center';
       container.appendChild(left); container.appendChild(right);
       wrap.appendChild(container);
       root.appendChild(wrap);
-
-      // keep visual in sync if user changes result externally
-      // add listener to update style on render
     });
 
-    // add listeners for merge checkboxes
     document.querySelectorAll('.merge-cb').forEach(cb => cb.addEventListener('change', onMergeSelectionChange));
     updateMergeButtons();
+    autoScrollToLatest();
   }
 
   function updateMergeButtons(){
@@ -222,40 +311,37 @@
   }
   function disableMerge(){ el('merge').disabled = true; el('undo-merge').disabled = !lastMerge; }
 
-  function onMergeSelectionChange(){ updateMergeButtons(); }
-
-  // storage helpers
-  function saveEntry(e){
+  // ---------- result marking (B: award only when marking Correct) ----------
+  function markResult(ts, result, btnEl){
     const arr = load(PRACT, []);
-    // dedupe by timestamp t
-    if(arr.some(x => x.t === e.t)) return false;
-    arr.push(e);
-    save(PRACT, arr);
-    return true;
-  }
-  function deleteLog(ts){
-    let arr = load(PRACT, []);
-    arr = arr.filter(x => x.t !== ts);
-    save(PRACT, arr);
-    renderLogs();
-  }
-  function updateLogResult(ts, newResult){
-    const arr = load(PRACT, []);
-    const i = arr.findIndex(x => x.t === ts);
+    const i = arr.findIndex(x=> x.t === ts);
     if(i === -1) return;
-    const old = arr[i];
-    arr[i] = Object.assign({}, old, { result: newResult });
-    // handle XP effects: if marking incorrect, set points = 0
-    if(newResult === 'Incorrect') arr[i].points = 0;
+    const entry = arr[i];
+    const prev = entry.result;
+    entry.result = result;
+    // award only on Correct and only if not already awarded
+    if(result === 'Correct' && !entry.awarded){
+      addXP(entry.points, 'gta');
+      entry.awarded = true;
+      // particles (burst behind the clicked button)
+      if(!reducedMotion){
+        // compute position: center of button
+        const rect = btnEl.getBoundingClientRect();
+        spawnParticles(rect.left + rect.width/2, rect.top + rect.height/2, 'rgba(168,85,247,0.95)');
+      }
+      // visual pulse
+      btnEl.animate([{ transform:'scale(1.0)' }, { transform:'scale(1.08)' }, { transform:'scale(1.0)' }], { duration:300, easing:'ease-out' });
+    }
+    // if marking Incorrect or Unattempted, we do not subtract XP even if previously awarded to avoid negative surprises (intentional)
+    arr[i] = entry;
     save(PRACT, arr);
     renderLogs();
   }
 
-  // start / pause / resume / submit question
-  function qStartHandler(){
-    if(!gtaRunning) { alert('Start GTA session first'); return; }
+  // ---------- question timer controls ----------
+  function qStart(){
+    if(!gtaRunning){ alert('Start GTA session first'); return; }
     if(qState === 'running') return;
-    // start new question cycle
     qNumber += 1;
     qStart = Date.now() - qElapsed;
     qInterval = setInterval(()=> {
@@ -265,13 +351,13 @@
     qState = 'running';
     renderHeader();
   }
-  function qPauseHandler(){
+  function qPause(){
     if(qState !== 'running') return;
     clearInterval(qInterval); qInterval = null;
     qState = 'paused';
     renderHeader();
   }
-  function qResumeHandler(){
+  function qResume(){
     if(qState !== 'paused') return;
     qStart = Date.now() - qElapsed;
     qInterval = setInterval(()=> {
@@ -281,8 +367,7 @@
     qState = 'running';
     renderHeader();
   }
-  function qResetStateAfterSubmit(){
-    // clear timer & reset state so next question can start cleanly
+  function qResetAfterSubmit(){
     if(qInterval) clearInterval(qInterval);
     qInterval = null;
     qElapsed = 0;
@@ -291,20 +376,17 @@
     renderHeader();
   }
 
-  function qSubmitHandler(){
+  // ---------- submit (non-blocking) ----------
+  function qSubmit(){
     if(qState === 'paused'){ alert('Resume before submitting.'); return; }
     if(qState !== 'running'){ alert('Start the question before submitting.'); return; }
-    // stop timer
-    if(qInterval) { clearInterval(qInterval); qInterval = null; }
+    if(qInterval){ clearInterval(qInterval); qInterval = null; }
     const timeSec = Math.round((qElapsed||0)/1000);
-    // check against mainSeconds
     if(timeSec > mainSeconds){
       alert('Time exceeded remaining main time — submission rejected. Session continues.');
-      // reset question state for retry (do not reduce mainSeconds)
-      qResetStateAfterSubmit();
+      qResetAfterSubmit();
       return;
     }
-    // prepare entry (pending result)
     const name = el('gta-session').value || localStorage.getItem('su_default_gta') || ('GTA_'+new Date().toISOString().slice(0,10)+'_'+Math.floor(Math.random()*1000));
     el('gta-session').value = name;
     localStorage.setItem('su_default_gta', name);
@@ -312,75 +394,18 @@
     const sub = el('gta-sub').value || 'Mixed';
     const diff = el('gta-diff').value || 'Mixed';
     const pts = calcPoints(timeSec, diff);
-    const entry = { session: sessionKey, subject: sub, topic: '', diff, time: timeSec, points: pts, result: 'Pending', q: qNumber, t: Date.now() };
-    const ok = saveEntry(entry);
-    if(!ok){
-      alert('Duplicate prevented (try again).');
-      qResetStateAfterSubmit();
-      return;
-    }
-    // reduce mainSeconds (static main timer updated only on save)
-    mainSeconds -= timeSec;
-    if(mainSeconds < 0) mainSeconds = 0;
+
+    const entry = { session: sessionKey, subject: sub, topic: '', diff, time: timeSec, points: pts, result: 'Pending', awarded: false, q: qNumber, t: Date.now() };
+    const ok = savePracticeEntry(entry);
+    if(!ok){ alert('Duplicate prevented (try again)'); qResetAfterSubmit(); return; }
+
+    mainSeconds -= timeSec; if(mainSeconds < 0) mainSeconds = 0;
     renderHeader();
     renderLogs();
-
-    // immediate result UI (three big buttons) like Practice but inline modal-like:
-    showResultSelector(entry.t);
-
-    // reset question to allow next question
-    qResetStateAfterSubmit();
+    qResetAfterSubmit();
   }
 
-  // result UI (non-blocking) - place temporary overlay/panel near the top of logs
-  function showResultSelector(ts){
-    const sessionRoot = el('gta-log-list');
-    // build a small floating panel
-    const panel = document.createElement('div');
-    panel.className = 'card';
-    panel.style.position = 'sticky';
-    panel.style.top = '8px';
-    panel.style.zIndex = 40;
-    panel.style.display = 'flex';
-    panel.style.flexDirection = 'column';
-    panel.style.gap = '8px';
-    panel.innerHTML = `<div class="h1">Mark Result</div><div class="small">Choose result for the last submitted question</div>`;
-    const btnRow = document.createElement('div'); btnRow.style.display='flex'; btnRow.style.gap='8px';
-    const bC = document.createElement('button'); bC.className='btn'; bC.textContent='🟩 Correct';
-    const bI = document.createElement('button'); bI.className='btn'; bI.textContent='❌ Incorrect';
-    const bU = document.createElement('button'); bU.className='btn ghost'; bU.textContent='◯ Unattempted';
-    btnRow.appendChild(bC); btnRow.appendChild(bI); btnRow.appendChild(bU);
-    panel.appendChild(btnRow);
-    // insert panel at top
-    sessionRoot.parentNode.insertBefore(panel, sessionRoot);
-
-    function clearPanel(){
-      if(panel && panel.parentNode) panel.parentNode.removeChild(panel);
-      renderLogs();
-      updateMergeButtons();
-    }
-
-    function applyResult(choice){
-      const arr = load(PRACT, []);
-      const i = arr.findIndex(x => x.t === ts);
-      if(i === -1){ clearPanel(); return; }
-      const entry = arr[i];
-      if(choice === 'Correct'){ entry.result = 'Correct'; /* points already saved */ }
-      else if(choice === 'Incorrect'){ entry.result = 'Incorrect'; entry.points = 0; }
-      else { entry.result = 'Unattempted'; /* keep points so can merge later */ }
-      arr[i] = entry;
-      save(PRACT, arr);
-      // award extra XP only if result is correct AND points > 0: but points were given at save time already.
-      // If you want to give immediate XP for marking correct and previously 'pending' had not added XP, adapt here.
-      clearPanel();
-    }
-
-    bC.onclick = ()=> applyResult('Correct');
-    bI.onclick = ()=> applyResult('Incorrect');
-    bU.onclick = ()=> applyResult('Unattempted');
-  }
-
-  // Merge exactly 2 selected logs
+  // ---------- merge/undo ----------
   function mergeHandler(){
     const checks = Array.from(document.querySelectorAll('.merge-cb') || []).filter(c=> c.checked);
     if(checks.length !== 2) return alert('Select exactly 2 logs to merge.');
@@ -388,39 +413,18 @@
     const arr = load(PRACT, []);
     const l1 = arr.find(x=> x.t === t1), l2 = arr.find(x=> x.t === t2);
     if(!l1 || !l2) return alert('Selected logs not found.');
-    // ensure same session
-    if(l1.session !== l2.session){
-      if(!confirm('Selected logs are from different sessions. Merge anyway?')) return;
-    }
-    // compute combined
+    if(l1.session !== l2.session){ if(!confirm('Selected logs are from different sessions. Merge anyway?')) return; }
     const combinedTime = (Number(l1.time)||0) + (Number(l2.time)||0);
-    // result = result of second selected (order is checkbox order)
-    const newResult = l2.result || 'Pending';
     const newDiff = l2.diff || l1.diff || 'Mixed';
     const newQ = Math.min(l1.q||9999, l2.q||9999);
     const newPoints = calcPoints(Math.round(combinedTime), newDiff);
+    const newEntry = { session: l1.session, subject: l2.subject||l1.subject, topic: (l1.topic||'') + (l2.topic? ' + '+l2.topic : ''), diff: newDiff, time: Math.round(combinedTime), points: newPoints, result: l2.result || 'Pending', awarded: false, q: newQ, t: Date.now() };
 
-    const newEntry = { session: l1.session, subject: l2.subject || l1.subject, topic: (l1.topic||'') + (l2.topic? ' + '+l2.topic : ''), diff: newDiff, time: Math.round(combinedTime), points: newPoints, result: newResult, q: newQ, t: Date.now() };
-
-    // remove old and add new
-    const remaining = arr.filter(x => x.t !== t1 && x.t !== t2);
-    // store undo info
     lastMerge = { removed: [l1, l2], added: newEntry };
+    const remaining = arr.filter(x => x.t !== t1 && x.t !== t2);
     remaining.push(newEntry);
     save(PRACT, remaining);
-
-    // XP adjustment: previously points for l1 + l2 were already given at their saves.
-    // As per decision, recalc XP based on combined time -> newPoints.
-    // We add deltaXP = newPoints - (old1.points + old2.points) if positive; do not subtract negative (safer).
-    const oldSum = (Number(l1.points)||0) + (Number(l2.points)||0);
-    const delta = newPoints - oldSum;
-    if(delta > 0) addXP(delta, 'merge'); // reward delta
-    else {
-      // do not subtract XP to prevent negative surprises; but inform user
-      console.log('Merged reduced total points by', -delta, '- no XP subtraction applied.');
-    }
-
-    alert(`Merged logs — new time ${newEntry.time}s • result ${newEntry.result} • points ${newEntry.points}`);
+    alert(`Merged logs → ${newEntry.time}s • result: ${newEntry.result} • points: ${newEntry.points}`);
     renderLogs();
     updateMergeButtons();
   }
@@ -428,18 +432,16 @@
   function undoMerge(){
     if(!lastMerge) return alert('No merge to undo.');
     const arr = load(PRACT, []);
-    // remove added
     const remaining = arr.filter(x => x.t !== lastMerge.added.t);
-    // put back removed
     remaining.push(...lastMerge.removed);
     save(PRACT, remaining);
-    alert('Undo merge done (restored previous logs).');
     lastMerge = null;
+    alert('Undo merge done.');
     renderLogs();
     updateMergeButtons();
   }
 
-  // export current session logs to excel
+  // ---------- export / clear ----------
   function exportHandler(){
     const name = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
     if(!name) return alert('Set session name first.');
@@ -447,14 +449,13 @@
     const all = load(PRACT, []).filter(x=> x.session === session);
     if(!all.length) return alert('No logs to export.');
     const seen = {}; const unique = [];
-    all.forEach(r => { if(!seen[r.t]){ seen[r.t]=true; unique.push(r); } });
-    const ws = [['Date','Session','Q#','Subject','Topic','Difficulty','Time(s)','Result','Points']];
-    unique.forEach(r => ws.push([ new Date(r.t).toLocaleString(), r.session, r.q||'', r.subject, r.topic||'', r.diff, r.time, r.result, r.points ]));
+    all.forEach(r => { if(!seen[r.t]){ seen[r.t]=true; unique.push(r); }});
+    const ws = [['Date','Session','Q#','Subject','Topic','Difficulty','Time(s)','Result','Points','Awarded']];
+    unique.forEach(r => ws.push([ new Date(r.t).toLocaleString(), r.session, r.q||'', r.subject, r.topic||'', r.diff, r.time, r.result, r.points, r.awarded? 'Yes':'No' ]));
     const wb = XLSX.utils.book_new(); const ws1 = XLSX.utils.aoa_to_sheet(ws);
     XLSX.utils.book_append_sheet(wb, ws1, 'GTA'); XLSX.writeFile(wb, 'Sunstrike_GTA_'+name+'.xlsx');
   }
 
-  // clear session logs
   function clearSession(){
     const name = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
     if(!name) return alert('No session name set');
@@ -465,50 +466,50 @@
     renderLogs();
   }
 
-  // start/stop GTA session
+  // ---------- events ----------
+  el('q-start').addEventListener('click', ()=>{ qStart(); });
+  el('q-pause').addEventListener('click', ()=>{ qPause(); });
+  el('q-resume').addEventListener('click', ()=>{ qResume(); });
+  el('q-submit').addEventListener('click', ()=>{ qSubmit(); });
+
   el('gta-start').addEventListener('click', ()=>{
     if(gtaRunning) return alert('GTA already running');
-    const tn = Number(el('gta-total').value||180);
+    const tn = Number(el('gta-total').value || 180);
     mainSeconds = tn*60;
     el('main-time').textContent = fmtMain(mainSeconds);
-    // ensure session name
     el('gta-session').value = el('gta-session').value || ('GTA_'+new Date().toISOString().slice(0,10)+'_'+Math.floor(Math.random()*1000));
     localStorage.setItem('su_default_gta', el('gta-session').value);
     gtaRunning = true;
-    qNumber = 0;
-    qElapsed = 0;
-    qState = 'idle';
-    renderHeader();
-    renderLogs();
-    alert('GTA started ('+tn+' min). Main timer is static and deducts time only when you submit questions.');
-  });
-  el('gta-end').addEventListener('click', ()=>{
-    if(!gtaRunning) return;
-    if(!confirm('End GTA session now?')) return;
-    gtaRunning = false;
-    renderHeader();
+    qNumber = 0; qElapsed = 0; qState = 'idle';
+    renderHeader(); renderLogs();
+    alert('GTA started. Main timer is static and will be reduced only when you submit questions.');
   });
 
-  // question controls
-  el('q-start').addEventListener('click', qStartHandler);
-  el('q-pause').addEventListener('click', qPauseHandler);
-  el('q-resume').addEventListener('click', qResumeHandler);
-  el('q-submit').addEventListener('click', qSubmitHandler);
+  el('gta-end').addEventListener('click', ()=>{ if(!gtaRunning) return; if(!confirm('End GTA session now?')) return; gtaRunning = false; renderHeader(); });
 
-  // merge/export/undo/clear
   el('merge').addEventListener('click', mergeHandler);
   el('undo-merge').addEventListener('click', undoMerge);
   el('gta-export').addEventListener('click', exportHandler);
   el('gta-clear-session').addEventListener('click', clearSession);
 
-  // refresh UI when storage changes (multi-tab)
-  window.addEventListener('storage', (e)=>{
-    if(e.key === PRACT) renderLogs();
-  });
+  function onMergeSelectionChange(){ updateMergeButtons(); }
+  function updateMergeButtons(){ const checks = Array.from(document.querySelectorAll('.merge-cb') || []).filter(c=> c.checked); el('merge').disabled = checks.length !== 2; el('undo-merge').disabled = !lastMerge; }
+
+  window.addEventListener('storage', (e)=>{ if(e.key === PRACT) renderLogs(); });
+
+  // ---------- animation frame for particles ----------
+  (function rafLoop(){ tickParticles(); requestAnimationFrame(rafLoop); })();
+
+  // ---------- initialize ----------
+  // reduced motion initial
+  reducedMotion = (localStorage.getItem(RED_KEY) === '1');
+  updateReducedToggleUI();
+
+  // attach reduced toggle UI (reads/writes in click handler above)
+  function updateReducedToggleUI(){ el('reduced-toggle').textContent = 'Reduced motion: ' + (localStorage.getItem(RED_KEY) === '1' ? 'On' : 'Off'); }
 
   // initial render
-  renderHeader();
-  renderLogs();
+  renderHeader(); renderLogs();
 
 })();
 </script>
