@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>GTA — Practice UI (Stable)</title>
+<title>GTA — Robust Stable Build</title>
 <link rel="stylesheet" href="styles.css" />
 <style>
-/* Minimal, animation-free styling for GTA (Practice-style) */
+/* Minimal styling (no animations) */
 .container{max-width:1100px;margin:16px auto;padding:14px}
 .card{background:#071026;border-radius:10px;padding:12px;color:#eaf4ff;margin-top:12px;border:1px solid rgba(255,255,255,0.04)}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -29,8 +29,8 @@
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
-        <h2 style="margin:0">GTA — Practice UI (Stable)</h2>
-        <div class="small">Static main timer. Submit creates log immediately. Mark result to award XP.</div>
+        <h2 style="margin:0">GTA — Robust Stable</h2>
+        <div class="small">This build has fallback storage if utils.js is missing. Static main timer, non-blocking submits.</div>
       </div>
     </div>
 
@@ -91,7 +91,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
         <h3 style="margin:0">Session Logs</h3>
-        <div class="small">Logs appear immediately after Submit. Mark result using the three buttons on each log.</div>
+        <div class="small">Logs appear after Submit. Mark result using the three buttons on each log.</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button id="merge" class="btn ghost" disabled>Merge Selected (2)</button>
@@ -103,39 +103,119 @@
   </div>
 </div>
 
-<footer style="color:#9fbbe8;text-align:center;padding:12px">Sunstrike — GTA (Stable)</footer>
+<footer style="color:#9fbbe8;text-align:center;padding:12px">Sunstrike — GTA (Robust)</footer>
 
 <!-- SheetJS for Excel export -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="utils.js"></script>
-<script>
-/*
-  GTA Stable (from Practice UI)
-  - No animations
-  - Static main timer reduced only on successful submit
-  - Submit -> log appears immediately (non-blocking)
-  - Result buttons visible on log, XP awarded only when marking Correct
-  - Merge exactly two logs, recalc points, set awarded=false
-  - Undo last merge
-  - Export to Excel
-  - Relies on utils.js: save(), load(), addXP(), savePracticeEntry(), SU.KEYS.*
-*/
 
+<!-- load utils.js if present (user likely has it) -->
+<script>
 (function(){
-  // ---------- state ----------
+  // simple guard: if utils.js exists, it will set window.SU or window.save etc.
+  // we don't force-load it here; we provide fallback implementations below if missing.
+  console.log('GTA: initializing (robust build).');
+})();
+</script>
+
+<script>
+/* ======= Fallback helpers: if utils.js defines SU/load/save/addXP/savePracticeEntry then we use them.
+   If not, we provide simple localStorage-backed replacements so page never throws and session can start.
+   These fallbacks are intentionally simple and safe. */
+(function(){
+  if(!window.SU || !window.SU.KEYS){
+    console.warn('GTA: SU or SU.KEYS not found — applying fallback SU.KEYS.');
+    window.SU = window.SU || {};
+    window.SU.KEYS = window.SU.KEYS || { PRACTICE: 'SU_PRACTICE_LOGS', TESTS: 'SU_TESTS' };
+  }
+  // safe load/save using the key names expected
+  if(typeof window.load !== 'function'){
+    window.load = function(key, def){
+      try{
+        const raw = localStorage.getItem(key);
+        if(!raw) return def === undefined ? null : def;
+        return JSON.parse(raw);
+      } catch(e){
+        console.error('GTA: fallback load parse error', e);
+        return def === undefined ? null : def;
+      }
+    };
+    console.info('GTA: fallback load() installed.');
+  }
+  if(typeof window.save !== 'function'){
+    window.save = function(key, val){
+      try{
+        localStorage.setItem(key, JSON.stringify(val));
+        return true;
+      } catch(e){
+        console.error('GTA: fallback save failed', e);
+        return false;
+      }
+    };
+    console.info('GTA: fallback save() installed.');
+  }
+  // savePracticeEntry - appends entry if t unique
+  if(typeof window.savePracticeEntry !== 'function'){
+    window.savePracticeEntry = function(entry){
+      try{
+        const key = window.SU.KEYS.PRACTICE;
+        const arr = load(key, []) || [];
+        if(arr.some(x => x.t === entry.t)) return false;
+        arr.push(entry);
+        save(key, arr);
+        // also signal tests updated
+        try{ localStorage.setItem('su_tests_updated', Date.now().toString()); }catch(e){}
+        return true;
+      } catch(e){
+        console.error('GTA: fallback savePracticeEntry failed', e);
+        return false;
+      }
+    };
+    console.info('GTA: fallback savePracticeEntry() installed.');
+  }
+  // addXP - simple increment counter fallback
+  if(typeof window.addXP !== 'function'){
+    window.addXP = function(amount, tag){
+      try{
+        const k = 'SU_XP_TOTAL';
+        const cur = Number(localStorage.getItem(k) || '0');
+        localStorage.setItem(k, String(cur + Number(amount || 0)));
+        console.log('GTA: fallback addXP awarded', amount, 'tag=', tag);
+      } catch(e){
+        console.error('GTA: fallback addXP failed', e);
+      }
+    };
+    console.info('GTA: fallback addXP() installed.');
+  }
+
+  // ensure SU.KEYS.PRACTICE exists
+  if(!window.SU.KEYS.PRACTICE){
+    window.SU.KEYS.PRACTICE = 'SU_PRACTICE_LOGS';
+  }
+})();
+</script>
+
+<script>
+/* === GTA app code (stable, no animations) ===
+   Relies on: SU.KEYS.PRACTICE, load(key, def), save(key, val), savePracticeEntry(entry), addXP(amount, tag)
+*/
+(function(){
+  // state
   let gtaRunning = false;
   let mainSeconds = 180*60;
   let qNumber = 0;
 
+  // question timer
   let qState = 'idle'; // idle | running | paused
   let qStart = 0, qElapsed = 0, qInterval = null;
 
+  // undo merge
   let lastMerge = null;
-  const PRACT = SU.KEYS.PRACTICE;
 
-  // ---------- helpers ----------
+  // shortcuts
   const el = id => document.getElementById(id);
+  const PRACT = window.SU.KEYS.PRACTICE;
 
+  // formatting helpers
   function fmtMS(ms){
     const s = Math.floor(ms/1000);
     const mm = String(Math.floor(s/60)).padStart(2,'0');
@@ -143,7 +223,6 @@
     const t = Math.floor(ms%1000/100);
     return `${mm}:${ss}.${t}`;
   }
-
   function fmtMain(sec){
     if(sec < 0) sec = 0;
     const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.floor(sec%60);
@@ -156,7 +235,7 @@
     return Math.max(1, pts);
   }
 
-  // ---------- rendering ----------
+  // render header
   function renderHeader(){
     el('main-time').textContent = fmtMain(mainSeconds);
     el('q-number').textContent = qNumber > 0 ? qNumber : '—';
@@ -166,13 +245,14 @@
     el('q-submit').disabled = qState !== 'running';
   }
 
+  // render logs
   function renderLogs(){
     const sessionName = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
     const root = el('gta-log-list');
     root.innerHTML = '';
     if(!sessionName){ root.innerHTML = '<div class="small">Set a session name and start.</div>'; disableMerge(); return; }
     const sessionKey = 'GTA:' + sessionName;
-    const all = load(PRACT, []).filter(x => x.session === sessionKey).sort((a,b)=> (a.t||0)-(b.t||0));
+    const all = (load(PRACT, []) || []).filter(x => x.session === sessionKey).sort((a,b)=> (a.t||0)-(b.t||0));
     if(all.length === 0){ root.innerHTML = '<div class="small">No logs yet for this session.</div>'; disableMerge(); return; }
 
     all.forEach((log, idx) => {
@@ -181,7 +261,6 @@
       const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'merge-cb'; cb.dataset.t = log.t;
       cb.style.marginRight = '8px';
       left.appendChild(cb);
-
       const info = document.createElement('div');
       info.innerHTML = `<strong>Q${log.q || (idx+1)} • ${log.subject}</strong>
                         <div class="small">${log.diff} • ${log.time}s • ${new Date(log.t).toLocaleString()}</div>`;
@@ -198,7 +277,6 @@
       const badge = document.createElement('div'); badge.className='badge';
       badge.textContent = `${log.points} pts${log.awarded? ' ✓' : ''}`;
 
-      // style based on result
       function refresh(){
         bCorrect.style.opacity = log.result==='Correct' ? '1' : '0.6';
         bIncorrect.style.opacity = log.result==='Incorrect' ? '1' : '0.6';
@@ -207,7 +285,6 @@
       }
       refresh();
 
-      // handlers
       bCorrect.addEventListener('click', ()=> markResult(log.t, 'Correct'));
       bIncorrect.addEventListener('click', ()=> markResult(log.t, 'Incorrect'));
       bUn.addEventListener('click', ()=> markResult(log.t, 'Unattempted'));
@@ -215,7 +292,7 @@
       row.appendChild(bCorrect); row.appendChild(bIncorrect); row.appendChild(bUn); row.appendChild(badge);
 
       const del = document.createElement('button'); del.className='btn ghost'; del.textContent='Delete';
-      del.onclick = ()=> { if(!confirm('Delete this log?')) return; let arr = load(PRACT, []); arr = arr.filter(x => x.t !== log.t); save(PRACT, arr); renderLogs(); };
+      del.onclick = ()=> { if(!confirm('Delete this log?')) return; let arr = load(PRACT, []); arr = (arr||[]).filter(x => x.t !== log.t); save(PRACT, arr); renderLogs(); };
 
       right.appendChild(row); right.appendChild(del);
 
@@ -241,24 +318,23 @@
     el('undo-merge').disabled = !lastMerge;
   }
 
-  // ---------- marking result ----------
+  // marking result (awards XP only when Correct and not already awarded)
   function markResult(ts, result){
-    const arr = load(PRACT, []);
+    const arr = load(PRACT, []) || [];
     const i = arr.findIndex(x => x.t === ts);
     if(i === -1) return;
     const entry = arr[i];
     entry.result = result;
     if(result === 'Correct' && !entry.awarded){
-      addXP(entry.points, 'gta'); // award XP now
+      try{ addXP(entry.points, 'gta'); }catch(e){ console.warn('GTA: addXP failed', e); }
       entry.awarded = true;
     }
-    // do not subtract XP if user later marks Incorrect to avoid complexity
     arr[i] = entry;
     save(PRACT, arr);
     renderLogs();
   }
 
-  // ---------- timer controls ----------
+  // question timer controls
   function qStart(){
     if(!gtaRunning){ alert('Start GTA session first'); return; }
     if(qState === 'running') return;
@@ -271,14 +347,12 @@
     qState = 'running';
     renderHeader();
   }
-
   function qPause(){
     if(qState !== 'running') return;
     clearInterval(qInterval); qInterval = null;
     qState = 'paused';
     renderHeader();
   }
-
   function qResume(){
     if(qState !== 'paused') return;
     qStart = Date.now() - qElapsed;
@@ -289,7 +363,6 @@
     qState = 'running';
     renderHeader();
   }
-
   function qResetAfterSubmit(){
     if(qInterval) clearInterval(qInterval);
     qInterval = null;
@@ -299,7 +372,7 @@
     renderHeader();
   }
 
-  // ---------- submit ----------
+  // submit
   function qSubmit(){
     if(qState === 'paused'){ alert('Resume before submitting'); return; }
     if(qState !== 'running'){ alert('Start the question before submitting'); return; }
@@ -323,24 +396,23 @@
     const entry = { session: sessionKey, subject: sub, diff, time: timeSec, points: pts, result: 'Pending', awarded: false, q: qNumber, t: Date.now() };
     const ok = savePracticeEntry(entry);
     if(!ok){
-      alert('Duplicate prevented (try again).');
+      alert('Duplicate prevented. Try again.');
       qResetAfterSubmit();
       return;
     }
 
-    // reduce mainSeconds only on successful save
     mainSeconds -= timeSec; if(mainSeconds < 0) mainSeconds = 0;
     renderHeader();
     renderLogs();
     qResetAfterSubmit();
   }
 
-  // ---------- merge ----------
+  // merge
   function mergeHandler(){
     const checks = Array.from(document.querySelectorAll('.merge-cb') || []).filter(c=> c.checked);
     if(checks.length !== 2) return alert('Select exactly 2 logs to merge.');
     const t1 = Number(checks[0].dataset.t), t2 = Number(checks[1].dataset.t);
-    const arr = load(PRACT, []);
+    const arr = load(PRACT, []) || [];
     const l1 = arr.find(x=> x.t === t1), l2 = arr.find(x=> x.t === t2);
     if(!l1 || !l2) return alert('Selected logs not found.');
     if(l1.session !== l2.session){
@@ -365,7 +437,7 @@
 
   function undoMerge(){
     if(!lastMerge) return alert('No merge to undo.');
-    const arr = load(PRACT, []);
+    const arr = load(PRACT, []) || [];
     const remaining = arr.filter(x => x.t !== lastMerge.added.t);
     remaining.push(...lastMerge.removed);
     save(PRACT, remaining);
@@ -375,12 +447,12 @@
     updateMergeButtons();
   }
 
-  // ---------- export / clear ----------
+  // export
   function exportHandler(){
     const name = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
     if(!name) return alert('Set session name first.');
     const session = 'GTA:'+name;
-    const all = load(PRACT, []).filter(x=> x.session === session);
+    const all = (load(PRACT, []) || []).filter(x=> x.session === session);
     if(!all.length) return alert('No logs to export.');
     const seen = {}; const unique = [];
     all.forEach(r => { if(!seen[r.t]){ seen[r.t] = true; unique.push(r); }});
@@ -394,13 +466,13 @@
     const name = el('gta-session').value || localStorage.getItem('su_default_gta') || '';
     if(!name) return alert('No session name set');
     if(!confirm('Clear ALL logs for this session?')) return;
-    let arr = load(PRACT, []);
+    let arr = load(PRACT, []) || [];
     arr = arr.filter(x => x.session !== ('GTA:'+name));
     save(PRACT, arr);
     renderLogs();
   }
 
-  // ---------- wiring ----------
+  // wiring
   el('q-start').addEventListener('click', qStart);
   el('q-pause').addEventListener('click', qPause);
   el('q-resume').addEventListener('click', qResume);
@@ -416,7 +488,7 @@
     gtaRunning = true;
     qNumber = 0; qElapsed = 0; qState = 'idle';
     renderHeader(); renderLogs();
-    alert('GTA started. Main timer is static and will be reduced only on submit.');
+    console.log('GTA started: mainSeconds=', mainSeconds);
   });
 
   el('gta-end').addEventListener('click', ()=>{ if(!gtaRunning) return; if(!confirm('End GTA session now?')) return; gtaRunning = false; renderHeader(); });
@@ -431,9 +503,11 @@
 
   window.addEventListener('storage', (e) => { if(e.key === PRACT) renderLogs(); });
 
-  // initialize UI
-  renderHeader();
-  renderLogs();
+  // init
+  renderHeader(); renderLogs();
+
+  // expose debug helper in console
+  window._GTA_debug = { renderHeader, renderLogs, PRACT, version: 'robust-1' };
 
 })();
 </script>
